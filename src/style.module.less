@@ -6,14 +6,17 @@
   content: "🚩";
 }
 
-.settings {
+.settings,
+.logs {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   width: 15rem;
   font-size: 0.75rem;
   margin: auto;
+}
 
+.settings {
   &Entry {
     display: flex;
     justify-content: space-between;
@@ -42,5 +45,19 @@
 
   input[type="checkbox"] {
     width: auto;
+  }
+}
+
+.logs {
+  &Entry {
+    margin-bottom: 0.5rem;
+  }
+
+  &Entry[data-type="SUCCESS"] {
+    color: green;
+  }
+
+  &Entry[data-type="FAIL"] {
+    color: red;
   }
 }
