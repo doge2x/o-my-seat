@@ -1,0 +1,41 @@
+.startButton::after {
+  content: "🏁";
+}
+
+.startButton:hover::after {
+  content: "🚩";
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 17.5rem;
+  font-size: 0.75rem;
+
+  &Entry {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  &Submit {
+    display: flex;
+    justify-content: end;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+  }
+
+  button,
+  input {
+    font-size: 0.7rem;
+  }
+
+  input {
+    width: 6.5rem;
+    text-align: left;
+  }
+}
