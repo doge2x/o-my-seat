@@ -1,9 +1,17 @@
 import { render } from "solid-js/web";
 import { injectStyle } from "./inject";
 import { setSetting, settings, Settings } from "./settings";
-import { KeyOfType, openWin, unsafeCast } from "./utils";
+import {
+  date2hhmm,
+  date2mmss,
+  devLog,
+  hhmm2date,
+  KeyOfType,
+  openWin,
+  unsafeCast,
+} from "./utils";
 import style from "./style.module.less";
-import { createSignal, Index, JSX, Match, Switch } from "solid-js";
+import { createSignal, Index, JSX, Match, Show, Switch } from "solid-js";
 import { RsvChecker, fetchRsvSta } from "./rsv-sta";
 
 enum LogType {
@@ -20,14 +28,6 @@ function tomorrow(): string {
   const date = new Date();
   date.setDate(date.getDate() + 1);
   return date.toISOString().split("T")[0];
-}
-
-function padZero2(num: number): string {
-  return String(num).padStart(2, "0");
-}
-
-function date2hhmm(date: Date): string {
-  return `${padZero2(date.getHours())}:${padZero2(date.getMinutes())}`;
 }
 
 /**
@@ -229,6 +229,7 @@ export function prepareOccupation(roomId: string) {
   render(() => {
     const [stage, setStage] = createSignal<OccupyStage>(OccupyStage.Prepare);
     const [logs, setLogs] = createSignal<Log[]>([], { equals: false });
+    const [remain, setRemain] = createSignal<number>(-1);
 
     return (
       <div>
@@ -237,28 +238,52 @@ export function prepareOccupation(roomId: string) {
             <Setting
               onSubmit={(date, eagerly) => {
                 const occupy = () => {
-                  setStage(OccupyStage.Perform);
-                  performOccupation(roomId, date, (msg) => {
-                    console.log(msg);
-                    if (stage() === OccupyStage.Perform) {
-                      setLogs((logs) => {
-                        logs.push(msg);
-                        return logs;
-                      });
-                    }
+                  performOccupation(roomId, date, (log) => {
+                    devLog(log.msg);
+                    setLogs((logs) => {
+                      logs.push(log);
+                      return logs;
+                    });
                   });
                 };
 
+                setStage(OccupyStage.Perform);
                 if (eagerly) {
                   occupy();
                 } else {
-                  // TODO: run at given time
+                  // 执行时间为今天某时
+                  const startTime = hhmm2date(
+                    new Date().toLocaleDateString(),
+                    settings.tryStart
+                  );
+                  const timer = setInterval(() => {
+                    setRemain(startTime.getTime() - new Date().getTime());
+                    if (remain() <= 0) {
+                      clearInterval(timer);
+                      occupy();
+                    }
+                  }, 100);
+                  // 关闭窗口时取消执行
+                  win.addEventListener("unload", () => {
+                    devLog("取消预约");
+                    clearInterval(timer);
+                  });
                 }
               }}
             />
           </Match>
           <Match when={stage() === OccupyStage.Perform}>
             <div class={style.logs}>
+              <Show when={remain() > 0}>
+                <div class={style.logsTimer}>
+                  <span>
+                    等待中，于 {date2mmss(new Date(remain()))} 后开始执行
+                  </span>
+                </div>
+                <div class={style.logsEntry}>
+                  <i>*关闭窗口以取消预约</i>
+                </div>
+              </Show>
               <Index each={logs()}>
                 {(item) => (
                   <div class={style.logsEntry} data-type={item().type}>

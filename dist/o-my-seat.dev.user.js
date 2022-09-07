@@ -597,6 +597,23 @@ var __publicField = (obj, key, value) => {
     };
     return createMemo(indexArray(() => props.each, props.children, fallback ? fallback : void 0));
   }
+  function Show(props) {
+    let strictEqual = false;
+    const keyed = props.keyed;
+    const condition = createMemo(() => props.when, void 0, {
+      equals: (a, b) => strictEqual ? a === b : !a === !b
+    });
+    return createMemo(() => {
+      const c = condition();
+      if (c) {
+        const child = props.children;
+        const fn = typeof child === "function" && child.length > 0;
+        strictEqual = keyed || fn;
+        return fn ? untrack(() => child(c)) : child;
+      }
+      return props.fallback;
+    });
+  }
   function Switch(props) {
     let strictEqual = false;
     let keyed = false;
@@ -1095,11 +1112,28 @@ ${html}. Is your HTML properly formed?`;
   function relURL(path) {
     return new URL(path, window.location.href);
   }
+  function hhmm2date(date, hhmm) {
+    return new Date(`${date} ${hhmm}`);
+  }
+  function padZero2(num) {
+    return String(num).padStart(2, "0");
+  }
+  function date2hhmm(date) {
+    return `${padZero2(date.getHours())}:${padZero2(date.getMinutes())}`;
+  }
+  function date2mmss(date) {
+    return `${padZero2(date.getMinutes())}:${padZero2(date.getSeconds())}`;
+  }
   function assertNonNullable(v, msg) {
     if (v === null || v === void 0) {
       throw Error(msg != null ? msg : "unexpected null value");
     }
     return v;
+  }
+  function devLog(msg) {
+    {
+      console.log(msg);
+    }
   }
   function openWin(opts) {
     const win = assertNonNullable(
@@ -1116,21 +1150,23 @@ ${html}. Is your HTML properly formed?`;
     win.document.head.append(title);
     return win;
   }
-  const startButton = "_startButton_pwxwh_1";
-  const settings$1 = "_settings_pwxwh_7";
-  const logs = "_logs_pwxwh_8";
-  const settingsEntry = "_settingsEntry_pwxwh_16";
-  const settingsSubmit = "_settingsSubmit_pwxwh_21";
-  const logsEntry = "_logsEntry_pwxwh_40";
+  const startButton = "_startButton_nz33a_1";
+  const settings$1 = "_settings_nz33a_7";
+  const logs = "_logs_nz33a_8";
+  const settingsEntry = "_settingsEntry_nz33a_16";
+  const settingsSubmit = "_settingsSubmit_nz33a_21";
+  const logsEntry = "_logsEntry_nz33a_40";
+  const logsTimer = "_logsTimer_nz33a_41";
   const style = {
     startButton,
     settings: settings$1,
     logs,
     settingsEntry,
     settingsSubmit,
-    logsEntry
+    logsEntry,
+    logsTimer
   };
-  const styleCss = '._startButton_pwxwh_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_pwxwh_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_pwxwh_7,\n._logs_pwxwh_8 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 15rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_pwxwh_16 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.5rem;\n}\n._settingsSubmit_pwxwh_21 {\n  display: flex;\n  justify-content: end;\n}\n._settings_pwxwh_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_pwxwh_7 button,\n._settings_pwxwh_7 input {\n  font-size: 0.7rem;\n}\n._settings_pwxwh_7 input {\n  width: 6rem;\n  text-align: left;\n}\n._settings_pwxwh_7 input[type="checkbox"] {\n  width: auto;\n}\n._logsEntry_pwxwh_40 {\n  margin-bottom: 0.5rem;\n}\n._logsEntry_pwxwh_40[data-type="SUCCESS"] {\n  color: green;\n}\n._logsEntry_pwxwh_40[data-type="FAIL"] {\n  color: red;\n}\n';
+  const styleCss = '._startButton_nz33a_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_nz33a_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_nz33a_7,\n._logs_nz33a_8 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 15rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_nz33a_16 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.5rem;\n}\n._settingsSubmit_nz33a_21 {\n  display: flex;\n  justify-content: end;\n}\n._settings_nz33a_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_nz33a_7 button,\n._settings_nz33a_7 input {\n  font-size: 0.7rem;\n}\n._settings_nz33a_7 input {\n  width: 6rem;\n  text-align: left;\n}\n._settings_nz33a_7 input[type="checkbox"] {\n  width: auto;\n}\n._logsEntry_nz33a_40,\n._logsTimer_nz33a_41 {\n  margin-bottom: 0.5rem;\n}\n._logsTimer_nz33a_41 {\n  color: blue;\n}\n._logsEntry_nz33a_40[data-type="SUCCESS"] {\n  color: green;\n}\n._logsEntry_nz33a_40[data-type="FAIL"] {\n  color: red;\n}\n';
   const _tmpl$$1 = /* @__PURE__ */ template(`<span></span>`, 2);
   function injectStyle(doc) {
     const css = doc.createElement("style");
@@ -1427,9 +1463,6 @@ ${html}. Is your HTML properly formed?`;
     GM_setValue(key, val);
     setState(key, val);
   }
-  function hhmm2date(date, hhmm) {
-    return new Date(`${date} ${hhmm}`);
-  }
   function getSpareTime(spare, busy) {
     if (busy[0] <= spare[0]) {
       if (busy[1] <= spare[0]) {
@@ -1506,7 +1539,7 @@ ${html}. Is your HTML properly formed?`;
     }).forEach(([key, val]) => url.searchParams.set(key, val));
     return await fetch(url).then((t) => t.json());
   }
-  const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label></label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div></div>`, 2);
+  const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label></label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div><span>\u7B49\u5F85\u4E2D\uFF0C\u4E8E <!> \u540E\u5F00\u59CB\u6267\u884C</span></div>`, 5), _tmpl$5 = /* @__PURE__ */ template(`<div><i>*\u5173\u95ED\u7A97\u53E3\u4EE5\u53D6\u6D88\u9884\u7EA6</i></div>`, 4), _tmpl$6 = /* @__PURE__ */ template(`<div></div>`, 2);
   var LogType;
   (function(LogType2) {
     LogType2["Success"] = "SUCCESS";
@@ -1516,12 +1549,6 @@ ${html}. Is your HTML properly formed?`;
     const date = new Date();
     date.setDate(date.getDate() + 1);
     return date.toISOString().split("T")[0];
-  }
-  function padZero2(num) {
-    return String(num).padStart(2, "0");
-  }
-  function date2hhmm(date) {
-    return `${padZero2(date.getHours())}:${padZero2(date.getMinutes())}`;
   }
   async function performOccupation(roomId, date, onLog) {
     const rsvSta = await fetchRsvSta([settings.openStart, settings.openEnd], date, roomId);
@@ -1733,8 +1760,9 @@ ${html}. Is your HTML properly formed?`;
       const [logs2, setLogs] = createSignal([], {
         equals: false
       });
+      const [remain, setRemain] = createSignal(-1);
       return (() => {
-        const _el$7 = _tmpl$4.cloneNode(true);
+        const _el$7 = _tmpl$6.cloneNode(true);
         insert(_el$7, createComponent(Switch, {
           get children() {
             return [createComponent(Match, {
@@ -1745,19 +1773,30 @@ ${html}. Is your HTML properly formed?`;
                 return createComponent(Setting, {
                   onSubmit: (date, eagerly) => {
                     const occupy = () => {
-                      setStage(OccupyStage.Perform);
-                      performOccupation(roomId, date, (msg) => {
-                        console.log(msg);
-                        if (stage() === OccupyStage.Perform) {
-                          setLogs((logs3) => {
-                            logs3.push(msg);
-                            return logs3;
-                          });
-                        }
+                      performOccupation(roomId, date, (log) => {
+                        devLog(log.msg);
+                        setLogs((logs3) => {
+                          logs3.push(log);
+                          return logs3;
+                        });
                       });
                     };
+                    setStage(OccupyStage.Perform);
                     if (eagerly) {
                       occupy();
+                    } else {
+                      const startTime = hhmm2date(new Date().toLocaleDateString(), settings.tryStart);
+                      const timer = setInterval(() => {
+                        setRemain(startTime.getTime() - new Date().getTime());
+                        if (remain() <= 0) {
+                          clearInterval(timer);
+                          occupy();
+                        }
+                      }, 100);
+                      win.addEventListener("unload", () => {
+                        devLog("\u53D6\u6D88\u9884\u7EA6");
+                        clearInterval(timer);
+                      });
                     }
                   }
                 });
@@ -1767,26 +1806,44 @@ ${html}. Is your HTML properly formed?`;
                 return stage() === OccupyStage.Perform;
               },
               get children() {
-                const _el$8 = _tmpl$4.cloneNode(true);
+                const _el$8 = _tmpl$6.cloneNode(true);
+                insert(_el$8, createComponent(Show, {
+                  get when() {
+                    return remain() > 0;
+                  },
+                  get children() {
+                    return [(() => {
+                      const _el$9 = _tmpl$4.cloneNode(true), _el$10 = _el$9.firstChild, _el$11 = _el$10.firstChild, _el$13 = _el$11.nextSibling;
+                      _el$13.nextSibling;
+                      insert(_el$10, () => date2mmss(new Date(remain())), _el$13);
+                      createRenderEffect(() => className(_el$9, style.logsTimer));
+                      return _el$9;
+                    })(), (() => {
+                      const _el$14 = _tmpl$5.cloneNode(true);
+                      createRenderEffect(() => className(_el$14, style.logsEntry));
+                      return _el$14;
+                    })()];
+                  }
+                }), null);
                 insert(_el$8, createComponent(Index, {
                   get each() {
                     return logs2();
                   },
                   children: (item) => (() => {
-                    const _el$9 = _tmpl$4.cloneNode(true);
-                    insert(_el$9, () => item().msg);
+                    const _el$15 = _tmpl$6.cloneNode(true);
+                    insert(_el$15, () => item().msg);
                     createRenderEffect((_p$) => {
                       const _v$3 = style.logsEntry, _v$4 = item().type;
-                      _v$3 !== _p$._v$3 && className(_el$9, _p$._v$3 = _v$3);
-                      _v$4 !== _p$._v$4 && setAttribute(_el$9, "data-type", _p$._v$4 = _v$4);
+                      _v$3 !== _p$._v$3 && className(_el$15, _p$._v$3 = _v$3);
+                      _v$4 !== _p$._v$4 && setAttribute(_el$15, "data-type", _p$._v$4 = _v$4);
                       return _p$;
                     }, {
                       _v$3: void 0,
                       _v$4: void 0
                     });
-                    return _el$9;
+                    return _el$15;
                   })()
-                }));
+                }), null);
                 createRenderEffect(() => className(_el$8, style.logs));
                 return _el$8;
               }
