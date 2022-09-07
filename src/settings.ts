@@ -12,6 +12,9 @@ function getOrDefault<T>(key: string, defVal: T): T {
 export interface Settings {
   // === 预约相关设置 === //
 
+  // 优先预约的座位
+  marked: string[];
+
   // 预约时段
   amStart: string;
   amEnd: string;
@@ -37,6 +40,7 @@ export interface Settings {
 }
 
 const [state, setState] = createStore<Settings>({
+  marked: getOrDefault("marked", []),
   amStart: getOrDefault("amStart", "08:00"),
   amEnd: getOrDefault("amEnd", "12:00"),
   pmStart: getOrDefault("pmStart", "14:00"),

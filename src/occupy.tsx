@@ -11,9 +11,18 @@ import {
   unsafeCast,
 } from "./utils";
 import style from "./style.module.less";
-import { createSignal, Index, JSX, Match, Show, Switch } from "solid-js";
+import {
+  createMemo,
+  createSignal,
+  Index,
+  JSX,
+  Match,
+  Show,
+  Switch,
+} from "solid-js";
 import { RsvChecker, fetchRsvSta } from "./rsv-sta";
 import { createStore } from "solid-js/store";
+import { DataList } from "./datalist";
 
 enum LogType {
   Success = "SUCCESS",
@@ -60,6 +69,20 @@ async function performOccupation(
       .concat(rsvSta.data.slice(0, offset));
   }
 
+  const marked = settings.marked;
+  if (marked.length > 0) {
+    // 将优先预约的座位移动到最前面
+    const newData = [];
+    for (const data of rsvSta.data) {
+      if (marked.includes(data.devName)) {
+        newData.unshift(data);
+      } else {
+        newData.push(data);
+      }
+    }
+    rsvSta.data = newData;
+  }
+
   const occupy = (
     prefix: string,
     start: string,
@@ -101,6 +124,7 @@ interface InputTypeMap {
   text: string;
   checkbox: boolean;
   number: number;
+  datalist: string[];
 }
 
 /**
@@ -113,12 +137,13 @@ function Entry<K extends keyof InputTypeMap>(props: {
   value: InputTypeMap[K];
   onChange: (val: InputTypeMap[K]) => void;
 }) {
+  const id = createMemo(() => `input-${Date.now()}`);
   const Input2 = (props2: JSX.InputHTMLAttributes<HTMLInputElement>) => (
-    <input id={props.name} type={props.type} {...props2} />
+    <input id={id()} type={props.type} {...props2} />
   );
   return (
     <div class={style.settingsEntry}>
-      <label for={props.name} textContent={props.label} />
+      <label for={id()} textContent={props.label} />
       <Switch>
         <Match
           when={
@@ -150,6 +175,13 @@ function Entry<K extends keyof InputTypeMap>(props: {
             onChange={(ev) =>
               props.onChange(unsafeCast(ev.currentTarget.checked))
             }
+          />
+        </Match>
+        <Match when={props.type === "datalist"}>
+          <DataList
+            id={id()}
+            value={unsafeCast(props.value)}
+            onChange={(v) => setSetting("marked", v)}
           />
         </Match>
       </Switch>
@@ -212,6 +244,7 @@ function Setting(props: { onSubmit: (args: Args) => void }) {
         props.onSubmit(args);
       }}
     >
+      <LocalEntry name="marked" label="优先座位" type="datalist" />
       <ArgsEntry name="rsvDate" label="预约日期" type="date" />
       <LocalEntry name="amStart" label="上午预约开始" type="time" />
       <LocalEntry name="amEnd" label="上午预约结束" type="time" />
@@ -258,7 +291,7 @@ export function prepareOccupation(roomId: string) {
   injectStyle(win.document);
   render(() => {
     const [stage, setStage] = createSignal<OccupyStage>(OccupyStage.Prepare);
-    const [logs, setLogs] = createSignal<Log[]>([], { equals: false });
+    const [logs, setLogs] = createSignal<Log[]>([]);
     const [remain, setRemain] = createSignal<number>(-1);
 
     return (
@@ -270,10 +303,7 @@ export function prepareOccupation(roomId: string) {
                 const occupy = () => {
                   performOccupation(roomId, args, (log) => {
                     devLog(log.msg);
-                    setLogs((logs) => {
-                      logs.push(log);
-                      return logs;
-                    });
+                    setLogs((logs) => logs.concat(log));
                   });
                 };
 
@@ -287,7 +317,7 @@ export function prepareOccupation(roomId: string) {
                     settings.tryStart
                   );
                   const timer = setInterval(() => {
-                    setRemain(startTime.getTime() - new Date().getTime());
+                    setRemain(startTime.getTime() - Date.now());
                     if (remain() <= 0) {
                       clearInterval(timer);
                       occupy();

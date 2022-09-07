@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 15rem;
+  width: 16rem;
   font-size: 0.75rem;
   margin: auto;
 }
@@ -20,7 +20,7 @@
   &Entry {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.3rem;
   }
 
   &Submit {
@@ -38,8 +38,9 @@
     font-size: 0.7rem;
   }
 
+  .datalist,
   input {
-    width: 6rem;
+    width: 7rem;
     text-align: left;
   }
 
@@ -64,5 +65,19 @@
 
   &Entry[data-type="FAIL"] {
     color: red;
+  }
+}
+
+.datalist {
+  display: flex;
+  align-content: center;
+
+  button {
+    font-size: 0.3rem;
+    padding: 0 0.15rem;
+  }
+
+  input {
+    width: 100%;
   }
 }
