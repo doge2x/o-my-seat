@@ -13,6 +13,7 @@ import {
 import style from "./style.module.less";
 import { createSignal, Index, JSX, Match, Show, Switch } from "solid-js";
 import { RsvChecker, fetchRsvSta } from "./rsv-sta";
+import { createStore } from "solid-js/store";
 
 enum LogType {
   Success = "SUCCESS",
@@ -30,17 +31,24 @@ function tomorrow(): string {
   return date.toISOString().split("T")[0];
 }
 
+interface Args {
+  rsvDate: string;
+  eagerly: boolean;
+  rsvAm: boolean;
+  rsvPm: boolean;
+}
+
 /**
  * 执行占座程序
  */
 async function performOccupation(
   roomId: string,
-  date: string,
+  { rsvDate, rsvAm, rsvPm }: Args,
   onLog: (msg: Log) => void
 ) {
   const rsvSta = await fetchRsvSta(
     [settings.openStart, settings.openEnd],
-    date,
+    rsvDate,
     roomId
   );
 
@@ -59,7 +67,7 @@ async function performOccupation(
     minMinutes: number
   ) => {
     const checker = new RsvChecker(
-      date,
+      rsvDate,
       [start, end],
       [settings.openStart, settings.openEnd],
       minMinutes
@@ -79,8 +87,12 @@ async function performOccupation(
     onLog({ type: LogType.Fail, msg: `${prefix}预约失败！` });
   };
 
-  occupy("上午", settings.amStart, settings.amEnd, settings.amMinMinutes);
-  occupy("下午", settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
+  if (rsvAm) {
+    occupy("上午", settings.amStart, settings.amEnd, settings.amMinMinutes);
+  }
+  if (rsvPm) {
+    occupy("下午", settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
+  }
 }
 
 interface InputTypeMap {
@@ -89,24 +101,6 @@ interface InputTypeMap {
   text: string;
   checkbox: boolean;
   number: number;
-}
-
-/**
- * 持久化储存的参数项
- */
-function LocalEntry<
-  K1 extends keyof Settings,
-  K2 extends KeyOfType<InputTypeMap, Settings[K1]>
->(props: { name: K1; label: string; type: K2 }) {
-  return (
-    <Entry<K2>
-      value={unsafeCast(settings[props.name])}
-      onChange={(val: InputTypeMap[K2]) =>
-        setSetting(props.name, unsafeCast(val))
-      }
-      {...props}
-    />
-  );
 }
 
 /**
@@ -163,26 +157,62 @@ function Entry<K extends keyof InputTypeMap>(props: {
   );
 }
 
-function Setting(props: {
-  onSubmit: (date: string, eagerly: boolean) => void;
-}) {
-  const [date, setDate] = createSignal(tomorrow());
-  const [eagerly, setEagerlyRun] = createSignal(false);
+/**
+ * 持久化储存的参数项
+ */
+function LocalEntry<
+  K1 extends keyof Settings,
+  K2 extends KeyOfType<InputTypeMap, Settings[K1]>
+>(props: { name: K1; label: string; type: K2 }) {
+  return (
+    <Entry<K2>
+      value={unsafeCast(settings[props.name])}
+      onChange={(val: InputTypeMap[K2]) =>
+        setSetting(props.name, unsafeCast(val))
+      }
+      {...props}
+    />
+  );
+}
+
+/**
+ * 设置界面
+ */
+function Setting(props: { onSubmit: (args: Args) => void }) {
+  const [args, setArgs] = createStore<Args>({
+    rsvDate: tomorrow(),
+    eagerly: false,
+    rsvAm: true,
+    rsvPm: true,
+  });
+
+  /**
+   * 临时使用的参数项
+   */
+  function ArgsEntry<
+    K1 extends keyof Args,
+    K2 extends KeyOfType<InputTypeMap, Args[K1]>
+  >(props: { name: K1; label: string; type: K2 }) {
+    return (
+      <Entry<K2>
+        value={unsafeCast(args[props.name])}
+        onChange={(val: InputTypeMap[K2]) =>
+          setArgs(props.name, unsafeCast(val))
+        }
+        {...props}
+      />
+    );
+  }
+
   return (
     <form
       class={style.settings}
       onSubmit={(ev) => {
         ev.preventDefault();
-        props.onSubmit(date(), eagerly());
+        props.onSubmit(args);
       }}
     >
-      <Entry
-        name="rsvDate"
-        label="预约日期"
-        type="date"
-        value={date()}
-        onChange={(t) => setDate(t)}
-      />
+      <ArgsEntry name="rsvDate" label="预约日期" type="date" />
       <LocalEntry name="amStart" label="上午预约开始" type="time" />
       <LocalEntry name="amEnd" label="上午预约结束" type="time" />
       <LocalEntry
@@ -203,13 +233,9 @@ function Setting(props: {
       <LocalEntry name="tryInterval" label="尝试间隔（秒）" type="number" />
       <LocalEntry name="tryMax" label="尝试次数" type="number" />
       <LocalEntry name="random" label="随机选座" type="checkbox" />
-      <Entry
-        name="eagerly"
-        label="立即执行"
-        type="checkbox"
-        value={eagerly()}
-        onChange={(t) => setEagerlyRun(t)}
-      />
+      <ArgsEntry name="rsvAm" label="预约上午" type="checkbox" />
+      <ArgsEntry name="rsvPm" label="预约下午" type="checkbox" />
+      <ArgsEntry name="eagerly" label="立即执行" type="checkbox" />
       <div class={style.settingsSubmit}>
         <button type="submit" textContent={"执行"} />
       </div>
@@ -228,7 +254,7 @@ enum OccupyStage {
  * @param roomId 房间 ID
  */
 export function prepareOccupation(roomId: string) {
-  const win = openWin({ title: "O My Seat", width: 300, height: 450 });
+  const win = openWin({ title: "O My Seat", width: 300, height: 500 });
   injectStyle(win.document);
   render(() => {
     const [stage, setStage] = createSignal<OccupyStage>(OccupyStage.Prepare);
@@ -240,9 +266,9 @@ export function prepareOccupation(roomId: string) {
         <Switch>
           <Match when={stage() === OccupyStage.Prepare}>
             <Setting
-              onSubmit={(date, eagerly) => {
+              onSubmit={(args) => {
                 const occupy = () => {
-                  performOccupation(roomId, date, (log) => {
+                  performOccupation(roomId, args, (log) => {
                     devLog(log.msg);
                     setLogs((logs) => {
                       logs.push(log);
@@ -252,7 +278,7 @@ export function prepareOccupation(roomId: string) {
                 };
 
                 setStage(OccupyStage.Perform);
-                if (eagerly) {
+                if (args.eagerly) {
                   occupy();
                 } else {
                   // 执行时间为今天某时

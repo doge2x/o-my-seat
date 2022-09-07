@@ -1550,14 +1550,18 @@ ${html}. Is your HTML properly formed?`;
     date.setDate(date.getDate() + 1);
     return date.toISOString().split("T")[0];
   }
-  async function performOccupation(roomId, date, onLog) {
-    const rsvSta = await fetchRsvSta([settings.openStart, settings.openEnd], date, roomId);
+  async function performOccupation(roomId, {
+    rsvDate,
+    rsvAm,
+    rsvPm
+  }, onLog) {
+    const rsvSta = await fetchRsvSta([settings.openStart, settings.openEnd], rsvDate, roomId);
     if (settings.random) {
       const offset = Math.random() * rsvSta.data.length;
       rsvSta.data = rsvSta.data.slice(offset).concat(rsvSta.data.slice(0, offset));
     }
     const occupy = (prefix, start, end, minMinutes) => {
-      const checker = new RsvChecker(date, [start, end], [settings.openStart, settings.openEnd], minMinutes);
+      const checker = new RsvChecker(rsvDate, [start, end], [settings.openStart, settings.openEnd], minMinutes);
       for (const data of rsvSta.data) {
         const spare = checker.check(data);
         if (spare != null) {
@@ -1573,16 +1577,12 @@ ${html}. Is your HTML properly formed?`;
         msg: `${prefix}\u9884\u7EA6\u5931\u8D25\uFF01`
       });
     };
-    occupy("\u4E0A\u5348", settings.amStart, settings.amEnd, settings.amMinMinutes);
-    occupy("\u4E0B\u5348", settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
-  }
-  function LocalEntry(props) {
-    return createComponent(Entry, mergeProps({
-      get value() {
-        return unsafeCast(settings[props.name]);
-      },
-      onChange: (val) => setSetting(props.name, unsafeCast(val))
-    }, props));
+    if (rsvAm) {
+      occupy("\u4E0A\u5348", settings.amStart, settings.amEnd, settings.amMinMinutes);
+    }
+    if (rsvPm) {
+      occupy("\u4E0B\u5348", settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
+    }
   }
   function Entry(props) {
     const Input2 = (props2) => (() => {
@@ -1658,23 +1658,39 @@ ${html}. Is your HTML properly formed?`;
       return _el$2;
     })();
   }
+  function LocalEntry(props) {
+    return createComponent(Entry, mergeProps({
+      get value() {
+        return unsafeCast(settings[props.name]);
+      },
+      onChange: (val) => setSetting(props.name, unsafeCast(val))
+    }, props));
+  }
   function Setting(props) {
-    const [date, setDate] = createSignal(tomorrow());
-    const [eagerly, setEagerlyRun] = createSignal(false);
+    const [args, setArgs] = createStore({
+      rsvDate: tomorrow(),
+      eagerly: false,
+      rsvAm: true,
+      rsvPm: true
+    });
+    function ArgsEntry(props2) {
+      return createComponent(Entry, mergeProps({
+        get value() {
+          return unsafeCast(args[props2.name]);
+        },
+        onChange: (val) => setArgs(props2.name, unsafeCast(val))
+      }, props2));
+    }
     return (() => {
       const _el$5 = _tmpl$3.cloneNode(true), _el$6 = _el$5.firstChild, _el$7 = _el$6.firstChild;
       _el$5.addEventListener("submit", (ev) => {
         ev.preventDefault();
-        props.onSubmit(date(), eagerly());
+        props.onSubmit(args);
       });
-      insert(_el$5, createComponent(Entry, {
+      insert(_el$5, createComponent(ArgsEntry, {
         name: "rsvDate",
         label: "\u9884\u7EA6\u65E5\u671F",
-        type: "date",
-        get value() {
-          return date();
-        },
-        onChange: (t) => setDate(t)
+        type: "date"
       }), _el$6);
       insert(_el$5, createComponent(LocalEntry, {
         name: "amStart",
@@ -1736,14 +1752,20 @@ ${html}. Is your HTML properly formed?`;
         label: "\u968F\u673A\u9009\u5EA7",
         type: "checkbox"
       }), _el$6);
-      insert(_el$5, createComponent(Entry, {
+      insert(_el$5, createComponent(ArgsEntry, {
+        name: "rsvAm",
+        label: "\u9884\u7EA6\u4E0A\u5348",
+        type: "checkbox"
+      }), _el$6);
+      insert(_el$5, createComponent(ArgsEntry, {
+        name: "rsvPm",
+        label: "\u9884\u7EA6\u4E0B\u5348",
+        type: "checkbox"
+      }), _el$6);
+      insert(_el$5, createComponent(ArgsEntry, {
         name: "eagerly",
         label: "\u7ACB\u5373\u6267\u884C",
-        type: "checkbox",
-        get value() {
-          return eagerly();
-        },
-        onChange: (t) => setEagerlyRun(t)
+        type: "checkbox"
       }), _el$6);
       _el$7.textContent = "\u6267\u884C";
       createRenderEffect((_p$) => {
@@ -1767,7 +1789,7 @@ ${html}. Is your HTML properly formed?`;
     const win = openWin({
       title: "O My Seat",
       width: 300,
-      height: 450
+      height: 500
     });
     injectStyle(win.document);
     render(() => {
@@ -1786,9 +1808,9 @@ ${html}. Is your HTML properly formed?`;
               },
               get children() {
                 return createComponent(Setting, {
-                  onSubmit: (date, eagerly) => {
+                  onSubmit: (args) => {
                     const occupy = () => {
-                      performOccupation(roomId, date, (log) => {
+                      performOccupation(roomId, args, (log) => {
                         devLog(log.msg);
                         setLogs((logs3) => {
                           logs3.push(log);
@@ -1797,7 +1819,7 @@ ${html}. Is your HTML properly formed?`;
                       });
                     };
                     setStage(OccupyStage.Perform);
-                    if (eagerly) {
+                    if (args.eagerly) {
                       occupy();
                     } else {
                       const startTime = hhmm2date(new Date().toLocaleDateString(), settings.tryStart);
