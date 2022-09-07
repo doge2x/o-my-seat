@@ -87,6 +87,15 @@ var __publicField = (obj, key, value) => {
     const c = createComputation(fn, value, false, STALE, options);
     updateComputation(c);
   }
+  function createMemo(fn, value, options) {
+    options = options ? Object.assign({}, signalOptions, options) : signalOptions;
+    const c = createComputation(fn, value, true, 0, options);
+    c.observers = null;
+    c.observerSlots = null;
+    c.comparator = options.equals || void 0;
+    updateComputation(c);
+    return readSignal.bind(c);
+  }
   function batch(fn) {
     return runUpdates(fn, false);
   }
@@ -156,6 +165,15 @@ var __publicField = (obj, key, value) => {
       ...serializeValues(owner.sourceMap),
       ...owner.owned ? serializeChildren(owner) : {}
     };
+  }
+  function children(fn) {
+    const children2 = createMemo(fn);
+    const memo = createMemo(() => resolveChildren(children2()));
+    memo.toArray = () => {
+      const c = memo();
+      return Array.isArray(c) ? c : c != null ? [c] : [];
+    };
+    return memo;
   }
   function readSignal() {
     const runningTransition = Transition;
@@ -407,6 +425,19 @@ var __publicField = (obj, key, value) => {
     err = castError(err);
     throw err;
   }
+  function resolveChildren(children2) {
+    if (typeof children2 === "function" && !children2.length)
+      return resolveChildren(children2());
+    if (Array.isArray(children2)) {
+      const results = [];
+      for (let i = 0; i < children2.length; i++) {
+        const result = resolveChildren(children2[i]);
+        Array.isArray(result) ? results.push.apply(results, result) : results.push(result);
+      }
+      return results;
+    }
+    return children2;
+  }
   function hash(s) {
     for (var i = 0, h = 9; i < s.length; )
       h = Math.imul(h ^ s.charCodeAt(i++), 9 ** 9);
@@ -490,6 +521,37 @@ var __publicField = (obj, key, value) => {
         return [...new Set(keys)];
       }
     }, propTraps);
+  }
+  function Switch(props) {
+    let strictEqual = false;
+    let keyed = false;
+    const conditions = children(() => props.children), evalConditions = createMemo(() => {
+      let conds = conditions();
+      if (!Array.isArray(conds))
+        conds = [conds];
+      for (let i = 0; i < conds.length; i++) {
+        const c = conds[i].when;
+        if (c) {
+          keyed = !!conds[i].keyed;
+          return [i, c, conds[i]];
+        }
+      }
+      return [-1];
+    }, void 0, {
+      equals: (a, b) => a[0] === b[0] && (strictEqual ? a[1] === b[1] : !a[1] === !b[1]) && a[2] === b[2]
+    });
+    return createMemo(() => {
+      const [index, when, cond] = evalConditions();
+      if (index < 0)
+        return props.fallback;
+      const c = cond.children;
+      const fn = typeof c === "function" && c.length > 0;
+      strictEqual = keyed || fn;
+      return fn ? untrack(() => c(when)) : c;
+    });
+  }
+  function Match(props) {
+    return props;
   }
   let DEV;
   {
@@ -952,6 +1014,9 @@ ${html}. Is your HTML properly formed?`;
       parent.insertBefore(node, marker);
     return [node];
   }
+  function unsafeCast(t) {
+    return t;
+  }
   function relURL(path) {
     return new URL(path, window.location.href);
   }
@@ -976,17 +1041,17 @@ ${html}. Is your HTML properly formed?`;
     win.document.head.append(title);
     return win;
   }
-  const startButton = "_startButton_7hh38_1";
-  const settings$1 = "_settings_7hh38_7";
-  const settingsEntry = "_settingsEntry_7hh38_14";
-  const settingsSubmit = "_settingsSubmit_7hh38_19";
+  const startButton = "_startButton_a9ykj_1";
+  const settings$1 = "_settings_a9ykj_7";
+  const settingsEntry = "_settingsEntry_a9ykj_15";
+  const settingsSubmit = "_settingsSubmit_a9ykj_20";
   const style = {
     startButton,
     settings: settings$1,
     settingsEntry,
     settingsSubmit
   };
-  const styleCss = '._startButton_7hh38_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_7hh38_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_7hh38_7 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 17.5rem;\n  font-size: 0.75rem;\n}\n._settingsEntry_7hh38_14 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.5rem;\n}\n._settingsSubmit_7hh38_19 {\n  display: flex;\n  justify-content: end;\n}\n._settings_7hh38_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_7hh38_7 button,\n._settings_7hh38_7 input {\n  font-size: 0.7rem;\n}\n._settings_7hh38_7 input {\n  width: 6.5rem;\n  text-align: left;\n}\n';
+  const styleCss = '._startButton_a9ykj_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_a9ykj_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_a9ykj_7 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 15rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_a9ykj_15 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.5rem;\n}\n._settingsSubmit_a9ykj_20 {\n  display: flex;\n  justify-content: end;\n}\n._settings_a9ykj_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_a9ykj_7 button,\n._settings_a9ykj_7 input {\n  font-size: 0.7rem;\n}\n._settings_a9ykj_7 input {\n  width: 6rem;\n  text-align: left;\n}\n._settings_a9ykj_7 input[type="checkbox"] {\n  width: auto;\n}\n';
   const _tmpl$$1 = /* @__PURE__ */ template(`<span></span>`, 2);
   function injectStyle(doc) {
     const css = doc.createElement("style");
@@ -1273,6 +1338,7 @@ ${html}. Is your HTML properly formed?`;
     pmMinMinutes: getOrDefault("pmMinMinutes", 5 * 60),
     openStart: getOrDefault("openStart", "07:00"),
     openEnd: getOrDefault("openEnd", "22:00"),
+    random: getOrDefault("random", false),
     tryStart: getOrDefault("tryStart", "07:00"),
     tryInterval: getOrDefault("tryInterval", 5),
     tryMax: getOrDefault("tryMax", 3)
@@ -1361,38 +1427,7 @@ ${html}. Is your HTML properly formed?`;
     }).forEach(([key, val]) => url.searchParams.set(key, val));
     return await fetch(url).then((t) => t.json());
   }
-  const _tmpl$ = /* @__PURE__ */ template(`<div><label> </label><input required></div>`, 5), _tmpl$2 = /* @__PURE__ */ template(`<div><form><div><button type="submit"></button></div></form></div>`, 8);
-  function LocalSetting(props) {
-    return createComponent(Setting, mergeProps({
-      get value() {
-        return String(settings[props.name]);
-      },
-      onChange: (ev) => setSetting(props.name, props.parse(ev.currentTarget.value))
-    }, props));
-  }
-  function Setting(props) {
-    return (() => {
-      const _el$ = _tmpl$.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$4 = _el$2.nextSibling;
-      spread(_el$4, props, false, false);
-      createRenderEffect((_p$) => {
-        const _v$ = style.settingsEntry, _v$2 = props.name, _v$3 = props.label, _v$4 = props.name;
-        _v$ !== _p$._v$ && className(_el$, _p$._v$ = _v$);
-        _v$2 !== _p$._v$2 && setAttribute(_el$2, "for", _p$._v$2 = _v$2);
-        _v$3 !== _p$._v$3 && (_el$3.data = _p$._v$3 = _v$3);
-        _v$4 !== _p$._v$4 && setAttribute(_el$4, "id", _p$._v$4 = _v$4);
-        return _p$;
-      }, {
-        _v$: void 0,
-        _v$2: void 0,
-        _v$3: void 0,
-        _v$4: void 0
-      });
-      return _el$;
-    })();
-  }
-  function identity(t) {
-    return t;
-  }
+  const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label> </label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div></div>`, 2);
   function tomorrow() {
     const date = new Date();
     date.setDate(date.getDate() + 1);
@@ -1406,7 +1441,11 @@ ${html}. Is your HTML properly formed?`;
   }
   async function performOccupation(roomId, date, onSuccess, onFail) {
     const rsvSta = await fetchRsvSta([settings.openStart, settings.openEnd], date, roomId);
-    function occupy(prefix, start, end, minMinutes) {
+    if (settings.random) {
+      const offset = Math.random() * rsvSta.data.length;
+      rsvSta.data = rsvSta.data.slice(offset).concat(rsvSta.data.slice(0, offset));
+    }
+    const occupy = (prefix, start, end, minMinutes) => {
       const checker = new RsvChecker(date, [start, end], [settings.openStart, settings.openEnd], minMinutes);
       for (const data of rsvSta.data) {
         const spare = checker.check(data);
@@ -1416,111 +1455,197 @@ ${html}. Is your HTML properly formed?`;
         }
       }
       onFail(`${prefix}\u9884\u7EA6\u5931\u8D25\uFF01`);
-    }
+    };
     occupy("\u4E0A\u5348", settings.amStart, settings.amEnd, settings.amMinMinutes);
     occupy("\u4E0B\u5348", settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
+  }
+  function LocalEntry(props) {
+    return createComponent(Entry, mergeProps({
+      get value() {
+        return unsafeCast(settings[props.name]);
+      },
+      onChange: (val) => setSetting(props.name, unsafeCast(val))
+    }, props));
+  }
+  function Entry(props) {
+    const ty = props.type;
+    const Input2 = (props2) => (() => {
+      const _el$ = _tmpl$.cloneNode(true);
+      _el$.required = true;
+      setAttribute(_el$, "type", ty);
+      spread(_el$, props2, false, false);
+      createRenderEffect(() => setAttribute(_el$, "id", props2.name));
+      return _el$;
+    })();
+    return (() => {
+      const _el$2 = _tmpl$2.cloneNode(true), _el$3 = _el$2.firstChild, _el$4 = _el$3.firstChild;
+      insert(_el$2, createComponent(Switch, {
+        get children() {
+          return [createComponent(Match, {
+            when: ty === "date" || ty === "time" || ty === "text",
+            get children() {
+              return createComponent(Input2, {
+                get value() {
+                  return unsafeCast(props.value);
+                },
+                onChange: (ev) => props.onChange(unsafeCast(ev.currentTarget.value))
+              });
+            }
+          }), createComponent(Match, {
+            when: ty === "number",
+            get children() {
+              return createComponent(Input2, {
+                get value() {
+                  return unsafeCast(props.value);
+                },
+                onChange: (ev) => props.onChange(unsafeCast(parseInt(ev.currentTarget.value)))
+              });
+            }
+          }), createComponent(Match, {
+            when: ty === "checkbox",
+            get children() {
+              return createComponent(Input2, {
+                get checked() {
+                  return unsafeCast(props.value);
+                },
+                onChange: (ev) => props.onChange(unsafeCast(ev.currentTarget.checked))
+              });
+            }
+          })];
+        }
+      }), null);
+      createRenderEffect((_p$) => {
+        const _v$ = style.settingsEntry, _v$2 = props.name, _v$3 = props.label;
+        _v$ !== _p$._v$ && className(_el$2, _p$._v$ = _v$);
+        _v$2 !== _p$._v$2 && setAttribute(_el$3, "for", _p$._v$2 = _v$2);
+        _v$3 !== _p$._v$3 && (_el$4.data = _p$._v$3 = _v$3);
+        return _p$;
+      }, {
+        _v$: void 0,
+        _v$2: void 0,
+        _v$3: void 0
+      });
+      return _el$2;
+    })();
+  }
+  function Setting(props) {
+    const [date, setDate] = createSignal(tomorrow());
+    const [eagerly, setEagerlyRun] = createSignal(false);
+    return (() => {
+      const _el$5 = _tmpl$3.cloneNode(true), _el$6 = _el$5.firstChild, _el$7 = _el$6.firstChild;
+      _el$5.addEventListener("submit", (ev) => {
+        ev.preventDefault();
+        props.onSubmit(date(), eagerly());
+      });
+      insert(_el$5, createComponent(Entry, {
+        name: "rsvDate",
+        label: "\u9884\u7EA6\u65E5\u671F",
+        type: "date",
+        get value() {
+          return date();
+        },
+        onChange: (t) => setDate(t)
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "amStart",
+        label: "\u4E0A\u5348\u9884\u7EA6\u5F00\u59CB",
+        type: "time"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "amEnd",
+        label: "\u4E0A\u5348\u9884\u7EA6\u7ED3\u675F",
+        type: "time"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "amMinMinutes",
+        label: "\u4E0A\u5348\u6301\u7EED\u65F6\u95F4\uFF08\u5206\u949F\uFF09",
+        type: "number"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "pmStart",
+        label: "\u4E0B\u5348\u9884\u7EA6\u5F00\u59CB",
+        type: "time"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "pmEnd",
+        label: "\u4E0B\u5348\u9884\u7EA6\u7ED3\u675F",
+        type: "time"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "pmMinMinutes",
+        label: "\u4E0B\u5348\u6301\u7EED\u65F6\u95F4\uFF08\u5206\u949F\uFF09",
+        type: "number"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "openStart",
+        label: "\u56FE\u4E66\u9986\u8425\u4E1A\u5F00\u59CB",
+        type: "time"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "openEnd",
+        label: "\u56FE\u4E66\u9986\u8425\u4E1A\u7ED3\u675F",
+        type: "time"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "tryStart",
+        label: "\u5F00\u59CB\u5C1D\u8BD5\u65F6\u95F4",
+        type: "time"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "tryInterval",
+        label: "\u5C1D\u8BD5\u95F4\u9694\uFF08\u79D2\uFF09",
+        type: "number"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "tryMax",
+        label: "\u5C1D\u8BD5\u6B21\u6570",
+        type: "number"
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "random",
+        label: "\u968F\u673A\u9009\u5EA7",
+        type: "checkbox"
+      }), _el$6);
+      insert(_el$5, createComponent(Entry, {
+        name: "eagerly",
+        label: "\u7ACB\u5373\u6267\u884C",
+        type: "checkbox",
+        get value() {
+          return eagerly();
+        },
+        onChange: (t) => setEagerlyRun(t)
+      }), _el$6);
+      _el$7.textContent = "\u6267\u884C";
+      createRenderEffect((_p$) => {
+        const _v$4 = style.settings, _v$5 = style.settingsSubmit;
+        _v$4 !== _p$._v$4 && className(_el$5, _p$._v$4 = _v$4);
+        _v$5 !== _p$._v$5 && className(_el$6, _p$._v$5 = _v$5);
+        return _p$;
+      }, {
+        _v$4: void 0,
+        _v$5: void 0
+      });
+      return _el$5;
+    })();
   }
   function prepareOccupation(roomId) {
     const win = openWin({
       title: "\u8BBE\u7F6E",
       width: 300,
-      height: 400
+      height: 450
     });
     injectStyle(win.document);
     render(() => {
-      const [date, setDate] = createSignal(tomorrow());
       return (() => {
-        const _el$5 = _tmpl$2.cloneNode(true), _el$6 = _el$5.firstChild, _el$7 = _el$6.firstChild, _el$8 = _el$7.firstChild;
-        _el$6.addEventListener("submit", (ev) => {
-          ev.preventDefault();
-          performOccupation(roomId, date(), win.alert, win.alert);
-        });
-        insert(_el$6, createComponent(Setting, {
-          name: "rsvDate",
-          label: "\u9884\u7EA6\u65E5\u671F",
-          type: "date",
-          get value() {
-            return tomorrow();
-          },
-          onChange: (ev) => setDate(ev.currentTarget.value)
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "amStart",
-          label: "\u4E0A\u5348\u9884\u7EA6\u5F00\u59CB",
-          type: "time",
-          parse: identity
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "amEnd",
-          label: "\u4E0A\u5348\u9884\u7EA6\u7ED3\u675F",
-          type: "time",
-          parse: identity
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "amMinMinutes",
-          label: "\u4E0A\u5348\u6301\u7EED\u65F6\u95F4\uFF08\u5206\u949F\uFF09",
-          type: "number",
-          parse: parseInt
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "pmStart",
-          label: "\u4E0B\u5348\u9884\u7EA6\u5F00\u59CB",
-          type: "time",
-          parse: identity
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "pmEnd",
-          label: "\u4E0B\u5348\u9884\u7EA6\u7ED3\u675F",
-          type: "time",
-          parse: identity
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "pmMinMinutes",
-          label: "\u4E0B\u5348\u6301\u7EED\u65F6\u95F4\uFF08\u5206\u949F\uFF09",
-          type: "number",
-          parse: parseInt
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "openStart",
-          label: "\u56FE\u4E66\u9986\u8425\u4E1A\u5F00\u59CB",
-          type: "time",
-          parse: identity
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "openEnd",
-          label: "\u56FE\u4E66\u9986\u8425\u4E1A\u7ED3\u675F",
-          type: "time",
-          parse: identity
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "tryStart",
-          label: "\u5F00\u59CB\u5C1D\u8BD5\u65F6\u95F4",
-          type: "time",
-          parse: identity
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "tryInterval",
-          label: "\u5C1D\u8BD5\u95F4\u9694\uFF08\u79D2\uFF09",
-          type: "number",
-          parse: parseInt
-        }), _el$7);
-        insert(_el$6, createComponent(LocalSetting, {
-          name: "tryMax",
-          label: "\u5C1D\u8BD5\u6B21\u6570",
-          type: "number",
-          parse: parseInt
-        }), _el$7);
-        _el$8.textContent = "\u6267\u884C";
-        createRenderEffect((_p$) => {
-          const _v$5 = style.settings, _v$6 = style.settingsSubmit;
-          _v$5 !== _p$._v$5 && className(_el$6, _p$._v$5 = _v$5);
-          _v$6 !== _p$._v$6 && className(_el$7, _p$._v$6 = _v$6);
-          return _p$;
-        }, {
-          _v$5: void 0,
-          _v$6: void 0
-        });
-        return _el$5;
+        const _el$8 = _tmpl$4.cloneNode(true);
+        insert(_el$8, createComponent(Setting, {
+          onSubmit: (date, eagerly) => {
+            if (eagerly) {
+              performOccupation(roomId, date, win.alert, win.alert);
+            }
+          }
+        }));
+        return _el$8;
       })();
     }, win.document.body);
     return;

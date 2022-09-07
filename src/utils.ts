@@ -2,6 +2,14 @@ export function tuple<T extends ReadonlyArray<unknown>>(...t: T): T {
   return t;
 }
 
+export type KeyOfType<T, V> = keyof {
+  [K in keyof T as T[K] extends V ? K : never]: never;
+};
+
+export function unsafeCast<T, U>(t: T): U {
+  return t as unknown as U;
+}
+
 export function relURL(path: string): URL {
   return new URL(path, window.location.href);
 }

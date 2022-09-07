@@ -23,6 +23,8 @@ export interface Settings {
   // 图书馆营业时段
   openStart: string;
   openEnd: string;
+  // 随机座位
+  random: boolean;
 
   // === 执行相关设置 === //
 
@@ -43,6 +45,7 @@ const [state, setState] = createStore<Settings>({
   pmMinMinutes: getOrDefault("pmMinMinutes", 5 * 60),
   openStart: getOrDefault("openStart", "07:00"),
   openEnd: getOrDefault("openEnd", "22:00"),
+  random: getOrDefault("random", false),
   tryStart: getOrDefault("tryStart", "07:00"),
   tryInterval: getOrDefault("tryInterval", 5),
   tryMax: getOrDefault("tryMax", 3),
