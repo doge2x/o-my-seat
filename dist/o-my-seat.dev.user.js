@@ -1539,7 +1539,7 @@ ${html}. Is your HTML properly formed?`;
     }).forEach(([key, val]) => url.searchParams.set(key, val));
     return await fetch(url).then((t) => t.json());
   }
-  const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label></label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div><span>\u7B49\u5F85\u4E2D\uFF0C\u4E8E <!> \u540E\u5F00\u59CB\u6267\u884C</span></div>`, 5), _tmpl$5 = /* @__PURE__ */ template(`<div><i>*\u5173\u95ED\u7A97\u53E3\u4EE5\u53D6\u6D88\u9884\u7EA6</i></div>`, 4), _tmpl$6 = /* @__PURE__ */ template(`<div></div>`, 2);
+  const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label> </label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div><span>\u7B49\u5F85\u4E2D\uFF0C\u4E8E <!> \u540E\u5F00\u59CB\u6267\u884C</span></div>`, 5), _tmpl$5 = /* @__PURE__ */ template(`<div><i>*\u5173\u95ED\u7A97\u53E3\u4EE5\u53D6\u6D88\u9884\u7EA6</i></div>`, 4), _tmpl$6 = /* @__PURE__ */ template(`<div></div>`, 2);
   var LogType;
   (function(LogType2) {
     LogType2["Success"] = "SUCCESS";
@@ -1584,62 +1584,77 @@ ${html}. Is your HTML properly formed?`;
       onChange: (val) => setSetting(props.name, unsafeCast(val))
     }, props));
   }
-  function Entry({
-    name,
-    label,
-    type,
-    value,
-    onChange
-  }) {
-    const Input2 = (props) => (() => {
+  function Entry(props) {
+    const Input2 = (props2) => (() => {
       const _el$ = _tmpl$.cloneNode(true);
-      setAttribute(_el$, "type", type);
-      spread(_el$, props, false, false);
-      createRenderEffect(() => setAttribute(_el$, "id", props.name));
+      spread(_el$, props2, false, false);
+      createRenderEffect((_p$) => {
+        const _v$ = props.name, _v$2 = props.type;
+        _v$ !== _p$._v$ && setAttribute(_el$, "id", _p$._v$ = _v$);
+        _v$2 !== _p$._v$2 && setAttribute(_el$, "type", _p$._v$2 = _v$2);
+        return _p$;
+      }, {
+        _v$: void 0,
+        _v$2: void 0
+      });
       return _el$;
     })();
     return (() => {
-      const _el$2 = _tmpl$2.cloneNode(true), _el$3 = _el$2.firstChild;
-      setAttribute(_el$3, "for", name);
-      _el$3.textContent = label;
+      const _el$2 = _tmpl$2.cloneNode(true), _el$3 = _el$2.firstChild, _el$4 = _el$3.firstChild;
       insert(_el$2, createComponent(Switch, {
         get children() {
           return [createComponent(Match, {
-            when: type === "date" || type === "time" || type === "text",
+            get when() {
+              return props.type === "date" || props.type === "time" || props.type === "text";
+            },
             get children() {
               return createComponent(Input2, {
                 required: true,
                 get value() {
-                  return unsafeCast(value);
+                  return unsafeCast(props.value);
                 },
-                onChange: (ev) => onChange(unsafeCast(ev.currentTarget.value))
+                onChange: (ev) => props.onChange(unsafeCast(ev.currentTarget.value))
               });
             }
           }), createComponent(Match, {
-            when: type === "number",
+            get when() {
+              return props.type === "number";
+            },
             get children() {
               return createComponent(Input2, {
                 required: true,
                 get value() {
-                  return unsafeCast(value);
+                  return unsafeCast(props.value);
                 },
-                onChange: (ev) => onChange(unsafeCast(parseInt(ev.currentTarget.value)))
+                onChange: (ev) => props.onChange(unsafeCast(parseInt(ev.currentTarget.value)))
               });
             }
           }), createComponent(Match, {
-            when: type === "checkbox",
+            get when() {
+              return props.type === "checkbox";
+            },
             get children() {
               return createComponent(Input2, {
                 get checked() {
-                  return unsafeCast(value);
+                  return unsafeCast(props.value);
                 },
-                onChange: (ev) => onChange(unsafeCast(ev.currentTarget.checked))
+                onChange: (ev) => props.onChange(unsafeCast(ev.currentTarget.checked))
               });
             }
           })];
         }
       }), null);
-      createRenderEffect(() => className(_el$2, style.settingsEntry));
+      createRenderEffect((_p$) => {
+        const _v$3 = style.settingsEntry, _v$4 = props.name, _v$5 = props.label;
+        _v$3 !== _p$._v$3 && className(_el$2, _p$._v$3 = _v$3);
+        _v$4 !== _p$._v$4 && setAttribute(_el$3, "for", _p$._v$4 = _v$4);
+        _v$5 !== _p$._v$5 && (_el$4.data = _p$._v$5 = _v$5);
+        return _p$;
+      }, {
+        _v$3: void 0,
+        _v$4: void 0,
+        _v$5: void 0
+      });
       return _el$2;
     })();
   }
@@ -1647,12 +1662,12 @@ ${html}. Is your HTML properly formed?`;
     const [date, setDate] = createSignal(tomorrow());
     const [eagerly, setEagerlyRun] = createSignal(false);
     return (() => {
-      const _el$4 = _tmpl$3.cloneNode(true), _el$5 = _el$4.firstChild, _el$6 = _el$5.firstChild;
-      _el$4.addEventListener("submit", (ev) => {
+      const _el$5 = _tmpl$3.cloneNode(true), _el$6 = _el$5.firstChild, _el$7 = _el$6.firstChild;
+      _el$5.addEventListener("submit", (ev) => {
         ev.preventDefault();
         props.onSubmit(date(), eagerly());
       });
-      insert(_el$4, createComponent(Entry, {
+      insert(_el$5, createComponent(Entry, {
         name: "rsvDate",
         label: "\u9884\u7EA6\u65E5\u671F",
         type: "date",
@@ -1660,68 +1675,68 @@ ${html}. Is your HTML properly formed?`;
           return date();
         },
         onChange: (t) => setDate(t)
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "amStart",
         label: "\u4E0A\u5348\u9884\u7EA6\u5F00\u59CB",
         type: "time"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "amEnd",
         label: "\u4E0A\u5348\u9884\u7EA6\u7ED3\u675F",
         type: "time"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "amMinMinutes",
         label: "\u4E0A\u5348\u6301\u7EED\u65F6\u95F4\uFF08\u5206\u949F\uFF09",
         type: "number"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "pmStart",
         label: "\u4E0B\u5348\u9884\u7EA6\u5F00\u59CB",
         type: "time"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "pmEnd",
         label: "\u4E0B\u5348\u9884\u7EA6\u7ED3\u675F",
         type: "time"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "pmMinMinutes",
         label: "\u4E0B\u5348\u6301\u7EED\u65F6\u95F4\uFF08\u5206\u949F\uFF09",
         type: "number"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "openStart",
         label: "\u56FE\u4E66\u9986\u8425\u4E1A\u5F00\u59CB",
         type: "time"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "openEnd",
         label: "\u56FE\u4E66\u9986\u8425\u4E1A\u7ED3\u675F",
         type: "time"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "tryStart",
         label: "\u5F00\u59CB\u5C1D\u8BD5\u65F6\u95F4",
         type: "time"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "tryInterval",
         label: "\u5C1D\u8BD5\u95F4\u9694\uFF08\u79D2\uFF09",
         type: "number"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "tryMax",
         label: "\u5C1D\u8BD5\u6B21\u6570",
         type: "number"
-      }), _el$5);
-      insert(_el$4, createComponent(LocalEntry, {
+      }), _el$6);
+      insert(_el$5, createComponent(LocalEntry, {
         name: "random",
         label: "\u968F\u673A\u9009\u5EA7",
         type: "checkbox"
-      }), _el$5);
-      insert(_el$4, createComponent(Entry, {
+      }), _el$6);
+      insert(_el$5, createComponent(Entry, {
         name: "eagerly",
         label: "\u7ACB\u5373\u6267\u884C",
         type: "checkbox",
@@ -1729,18 +1744,18 @@ ${html}. Is your HTML properly formed?`;
           return eagerly();
         },
         onChange: (t) => setEagerlyRun(t)
-      }), _el$5);
-      _el$6.textContent = "\u6267\u884C";
+      }), _el$6);
+      _el$7.textContent = "\u6267\u884C";
       createRenderEffect((_p$) => {
-        const _v$ = style.settings, _v$2 = style.settingsSubmit;
-        _v$ !== _p$._v$ && className(_el$4, _p$._v$ = _v$);
-        _v$2 !== _p$._v$2 && className(_el$5, _p$._v$2 = _v$2);
+        const _v$6 = style.settings, _v$7 = style.settingsSubmit;
+        _v$6 !== _p$._v$6 && className(_el$5, _p$._v$6 = _v$6);
+        _v$7 !== _p$._v$7 && className(_el$6, _p$._v$7 = _v$7);
         return _p$;
       }, {
-        _v$: void 0,
-        _v$2: void 0
+        _v$6: void 0,
+        _v$7: void 0
       });
-      return _el$4;
+      return _el$5;
     })();
   }
   var OccupyStage;
@@ -1762,8 +1777,8 @@ ${html}. Is your HTML properly formed?`;
       });
       const [remain, setRemain] = createSignal(-1);
       return (() => {
-        const _el$7 = _tmpl$6.cloneNode(true);
-        insert(_el$7, createComponent(Switch, {
+        const _el$8 = _tmpl$6.cloneNode(true);
+        insert(_el$8, createComponent(Switch, {
           get children() {
             return [createComponent(Match, {
               get when() {
@@ -1806,51 +1821,51 @@ ${html}. Is your HTML properly formed?`;
                 return stage() === OccupyStage.Perform;
               },
               get children() {
-                const _el$8 = _tmpl$6.cloneNode(true);
-                insert(_el$8, createComponent(Show, {
+                const _el$9 = _tmpl$6.cloneNode(true);
+                insert(_el$9, createComponent(Show, {
                   get when() {
                     return remain() > 0;
                   },
                   get children() {
                     return [(() => {
-                      const _el$9 = _tmpl$4.cloneNode(true), _el$10 = _el$9.firstChild, _el$11 = _el$10.firstChild, _el$13 = _el$11.nextSibling;
-                      _el$13.nextSibling;
-                      insert(_el$10, () => date2mmss(new Date(remain())), _el$13);
-                      createRenderEffect(() => className(_el$9, style.logsTimer));
-                      return _el$9;
+                      const _el$10 = _tmpl$4.cloneNode(true), _el$11 = _el$10.firstChild, _el$12 = _el$11.firstChild, _el$14 = _el$12.nextSibling;
+                      _el$14.nextSibling;
+                      insert(_el$11, () => date2mmss(new Date(remain())), _el$14);
+                      createRenderEffect(() => className(_el$10, style.logsTimer));
+                      return _el$10;
                     })(), (() => {
-                      const _el$14 = _tmpl$5.cloneNode(true);
-                      createRenderEffect(() => className(_el$14, style.logsEntry));
-                      return _el$14;
+                      const _el$15 = _tmpl$5.cloneNode(true);
+                      createRenderEffect(() => className(_el$15, style.logsEntry));
+                      return _el$15;
                     })()];
                   }
                 }), null);
-                insert(_el$8, createComponent(Index, {
+                insert(_el$9, createComponent(Index, {
                   get each() {
                     return logs2();
                   },
                   children: (item) => (() => {
-                    const _el$15 = _tmpl$6.cloneNode(true);
-                    insert(_el$15, () => item().msg);
+                    const _el$16 = _tmpl$6.cloneNode(true);
+                    insert(_el$16, () => item().msg);
                     createRenderEffect((_p$) => {
-                      const _v$3 = style.logsEntry, _v$4 = item().type;
-                      _v$3 !== _p$._v$3 && className(_el$15, _p$._v$3 = _v$3);
-                      _v$4 !== _p$._v$4 && setAttribute(_el$15, "data-type", _p$._v$4 = _v$4);
+                      const _v$8 = style.logsEntry, _v$9 = item().type;
+                      _v$8 !== _p$._v$8 && className(_el$16, _p$._v$8 = _v$8);
+                      _v$9 !== _p$._v$9 && setAttribute(_el$16, "data-type", _p$._v$9 = _v$9);
                       return _p$;
                     }, {
-                      _v$3: void 0,
-                      _v$4: void 0
+                      _v$8: void 0,
+                      _v$9: void 0
                     });
-                    return _el$15;
+                    return _el$16;
                   })()
                 }), null);
-                createRenderEffect(() => className(_el$8, style.logs));
-                return _el$8;
+                createRenderEffect(() => className(_el$9, style.logs));
+                return _el$9;
               }
             })];
           }
         }));
-        return _el$7;
+        return _el$8;
       })();
     }, win.document.body);
     return;

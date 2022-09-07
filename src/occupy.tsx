@@ -112,46 +112,50 @@ function LocalEntry<
 /**
  * 一般参数项
  */
-function Entry<K extends keyof InputTypeMap>({
-  name,
-  label,
-  type,
-  value,
-  onChange,
-}: {
+function Entry<K extends keyof InputTypeMap>(props: {
   name: string;
   label: string;
   type: K;
   value: InputTypeMap[K];
   onChange: (val: InputTypeMap[K]) => void;
 }) {
-  const Input2 = (props: JSX.InputHTMLAttributes<HTMLInputElement>) => (
-    <input id={props.name} type={type} {...props} />
+  const Input2 = (props2: JSX.InputHTMLAttributes<HTMLInputElement>) => (
+    <input id={props.name} type={props.type} {...props2} />
   );
   return (
     <div class={style.settingsEntry}>
-      <label for={name} textContent={label} />
+      <label for={props.name} textContent={props.label} />
       <Switch>
-        <Match when={type === "date" || type === "time" || type === "text"}>
+        <Match
+          when={
+            props.type === "date" ||
+            props.type === "time" ||
+            props.type === "text"
+          }
+        >
           <Input2
             required
-            value={unsafeCast(value)}
-            onChange={(ev) => onChange(unsafeCast(ev.currentTarget.value))}
-          />
-        </Match>
-        <Match when={type === "number"}>
-          <Input2
-            required
-            value={unsafeCast(value)}
+            value={unsafeCast(props.value)}
             onChange={(ev) =>
-              onChange(unsafeCast(parseInt(ev.currentTarget.value)))
+              props.onChange(unsafeCast(ev.currentTarget.value))
             }
           />
         </Match>
-        <Match when={type === "checkbox"}>
+        <Match when={props.type === "number"}>
           <Input2
-            checked={unsafeCast(value)}
-            onChange={(ev) => onChange(unsafeCast(ev.currentTarget.checked))}
+            required
+            value={unsafeCast(props.value)}
+            onChange={(ev) =>
+              props.onChange(unsafeCast(parseInt(ev.currentTarget.value)))
+            }
+          />
+        </Match>
+        <Match when={props.type === "checkbox"}>
+          <Input2
+            checked={unsafeCast(props.value)}
+            onChange={(ev) =>
+              props.onChange(unsafeCast(ev.currentTarget.checked))
+            }
           />
         </Match>
       </Switch>
