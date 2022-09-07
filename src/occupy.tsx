@@ -3,8 +3,18 @@ import { injectStyle } from "./inject";
 import { setSetting, settings, Settings } from "./settings";
 import { KeyOfType, openWin, unsafeCast } from "./utils";
 import style from "./style.module.less";
-import { createSignal, JSX, Match, Switch } from "solid-js";
+import { createSignal, Index, JSX, Match, Switch } from "solid-js";
 import { RsvChecker, fetchRsvSta } from "./rsv-sta";
+
+enum LogType {
+  Success = "SUCCESS",
+  Fail = "FAIL",
+}
+
+interface Log {
+  type: LogType;
+  msg: string;
+}
 
 function tomorrow(): string {
   const date = new Date();
@@ -26,8 +36,7 @@ function date2hhmm(date: Date): string {
 async function performOccupation(
   roomId: string,
   date: string,
-  onSuccess: (msg: string) => void,
-  onFail: (msg: string) => void
+  onLog: (msg: Log) => void
 ) {
   const rsvSta = await fetchRsvSta(
     [settings.openStart, settings.openEnd],
@@ -58,15 +67,16 @@ async function performOccupation(
     for (const data of rsvSta.data) {
       const spare = checker.check(data);
       if (spare != null) {
-        onSuccess(
-          `${prefix}预约成功：${date2hhmm(spare[0])}-${date2hhmm(spare[1])}于${
-            data.devName
-          }座`
-        );
+        onLog({
+          type: LogType.Success,
+          msg: `${prefix}预约成功：${date2hhmm(spare[0])}-${date2hhmm(
+            spare[1]
+          )} 于 ${data.devName} 座`,
+        });
         return;
       }
     }
-    onFail(`${prefix}预约失败！`);
+    onLog({ type: LogType.Fail, msg: `${prefix}预约失败！` });
   };
 
   occupy("上午", settings.amStart, settings.amEnd, settings.amMinMinutes);
@@ -102,43 +112,46 @@ function LocalEntry<
 /**
  * 一般参数项
  */
-function Entry<K extends keyof InputTypeMap>(props: {
+function Entry<K extends keyof InputTypeMap>({
+  name,
+  label,
+  type,
+  value,
+  onChange,
+}: {
   name: string;
   label: string;
   type: K;
   value: InputTypeMap[K];
   onChange: (val: InputTypeMap[K]) => void;
 }) {
-  const ty = props.type;
   const Input2 = (props: JSX.InputHTMLAttributes<HTMLInputElement>) => (
-    <input id={props.name} required={true} type={ty} {...props} />
+    <input id={props.name} type={type} {...props} />
   );
   return (
     <div class={style.settingsEntry}>
-      <label for={props.name} textContent={props.label} />
+      <label for={name} textContent={label} />
       <Switch>
-        <Match when={ty === "date" || ty === "time" || ty === "text"}>
+        <Match when={type === "date" || type === "time" || type === "text"}>
           <Input2
-            value={unsafeCast(props.value)}
+            required
+            value={unsafeCast(value)}
+            onChange={(ev) => onChange(unsafeCast(ev.currentTarget.value))}
+          />
+        </Match>
+        <Match when={type === "number"}>
+          <Input2
+            required
+            value={unsafeCast(value)}
             onChange={(ev) =>
-              props.onChange(unsafeCast(ev.currentTarget.value))
+              onChange(unsafeCast(parseInt(ev.currentTarget.value)))
             }
           />
         </Match>
-        <Match when={ty === "number"}>
+        <Match when={type === "checkbox"}>
           <Input2
-            value={unsafeCast(props.value)}
-            onChange={(ev) =>
-              props.onChange(unsafeCast(parseInt(ev.currentTarget.value)))
-            }
-          />
-        </Match>
-        <Match when={ty === "checkbox"}>
-          <Input2
-            checked={unsafeCast(props.value)}
-            onChange={(ev) =>
-              props.onChange(unsafeCast(ev.currentTarget.checked))
-            }
+            checked={unsafeCast(value)}
+            onChange={(ev) => onChange(unsafeCast(ev.currentTarget.checked))}
           />
         </Match>
       </Switch>
@@ -200,26 +213,62 @@ function Setting(props: {
   );
 }
 
+enum OccupyStage {
+  Prepare = "PREPARE",
+  Perform = "PERFORM",
+}
+
 /**
  * 准备占座程序，设定相关参数
  *
  * @param roomId 房间 ID
  */
 export function prepareOccupation(roomId: string) {
-  const win = openWin({ title: "设置", width: 300, height: 450 });
+  const win = openWin({ title: "O My Seat", width: 300, height: 450 });
   injectStyle(win.document);
   render(() => {
+    const [stage, setStage] = createSignal<OccupyStage>(OccupyStage.Prepare);
+    const [logs, setLogs] = createSignal<Log[]>([], { equals: false });
+
     return (
       <div>
-        <Setting
-          onSubmit={(date, eagerly) => {
-            if (eagerly) {
-              performOccupation(roomId, date, win.alert, win.alert);
-            } else {
-              // TODO: run at given time
-            }
-          }}
-        />
+        <Switch>
+          <Match when={stage() === OccupyStage.Prepare}>
+            <Setting
+              onSubmit={(date, eagerly) => {
+                const occupy = () => {
+                  setStage(OccupyStage.Perform);
+                  performOccupation(roomId, date, (msg) => {
+                    console.log(msg);
+                    if (stage() === OccupyStage.Perform) {
+                      setLogs((logs) => {
+                        logs.push(msg);
+                        return logs;
+                      });
+                    }
+                  });
+                };
+
+                if (eagerly) {
+                  occupy();
+                } else {
+                  // TODO: run at given time
+                }
+              }}
+            />
+          </Match>
+          <Match when={stage() === OccupyStage.Perform}>
+            <div class={style.logs}>
+              <Index each={logs()}>
+                {(item) => (
+                  <div class={style.logsEntry} data-type={item().type}>
+                    {item().msg}
+                  </div>
+                )}
+              </Index>
+            </div>
+          </Match>
+        </Switch>
       </div>
     );
   }, win.document.body);
