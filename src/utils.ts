@@ -43,6 +43,18 @@ export function devLog(msg: string) {
   }
 }
 
+export function classList(...list: (string | undefined)[]): {
+  [k: string]: boolean;
+} {
+  const obj: { [k: string]: boolean } = {};
+  for (const cls of list) {
+    if (cls !== undefined) {
+      obj[cls] = true;
+    }
+  }
+  return obj;
+}
+
 export function openWin(opts: {
   title: string;
   width: number;

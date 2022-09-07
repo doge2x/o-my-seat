@@ -477,6 +477,96 @@ var __publicField = (obj, key, value) => {
     for (let i = 0; i < d.length; i++)
       d[i]();
   }
+  function mapArray(list, mapFn, options = {}) {
+    let items = [], mapped = [], disposers = [], len = 0, indexes = mapFn.length > 1 ? [] : null;
+    onCleanup(() => dispose(disposers));
+    return () => {
+      let newItems = list() || [], i, j;
+      newItems[$TRACK];
+      return untrack(() => {
+        let newLen = newItems.length, newIndices, newIndicesNext, temp, tempdisposers, tempIndexes, start, end, newEnd, item;
+        if (newLen === 0) {
+          if (len !== 0) {
+            dispose(disposers);
+            disposers = [];
+            items = [];
+            mapped = [];
+            len = 0;
+            indexes && (indexes = []);
+          }
+          if (options.fallback) {
+            items = [FALLBACK];
+            mapped[0] = createRoot((disposer) => {
+              disposers[0] = disposer;
+              return options.fallback();
+            });
+            len = 1;
+          }
+        } else if (len === 0) {
+          mapped = new Array(newLen);
+          for (j = 0; j < newLen; j++) {
+            items[j] = newItems[j];
+            mapped[j] = createRoot(mapper);
+          }
+          len = newLen;
+        } else {
+          temp = new Array(newLen);
+          tempdisposers = new Array(newLen);
+          indexes && (tempIndexes = new Array(newLen));
+          for (start = 0, end = Math.min(len, newLen); start < end && items[start] === newItems[start]; start++)
+            ;
+          for (end = len - 1, newEnd = newLen - 1; end >= start && newEnd >= start && items[end] === newItems[newEnd]; end--, newEnd--) {
+            temp[newEnd] = mapped[end];
+            tempdisposers[newEnd] = disposers[end];
+            indexes && (tempIndexes[newEnd] = indexes[end]);
+          }
+          newIndices = /* @__PURE__ */ new Map();
+          newIndicesNext = new Array(newEnd + 1);
+          for (j = newEnd; j >= start; j--) {
+            item = newItems[j];
+            i = newIndices.get(item);
+            newIndicesNext[j] = i === void 0 ? -1 : i;
+            newIndices.set(item, j);
+          }
+          for (i = start; i <= end; i++) {
+            item = items[i];
+            j = newIndices.get(item);
+            if (j !== void 0 && j !== -1) {
+              temp[j] = mapped[i];
+              tempdisposers[j] = disposers[i];
+              indexes && (tempIndexes[j] = indexes[i]);
+              j = newIndicesNext[j];
+              newIndices.set(item, j);
+            } else
+              disposers[i]();
+          }
+          for (j = start; j < newLen; j++) {
+            if (j in temp) {
+              mapped[j] = temp[j];
+              disposers[j] = tempdisposers[j];
+              if (indexes) {
+                indexes[j] = tempIndexes[j];
+                indexes[j](j);
+              }
+            } else
+              mapped[j] = createRoot(mapper);
+          }
+          mapped = mapped.slice(0, len = newLen);
+          items = newItems.slice(0);
+        }
+        return mapped;
+      });
+      function mapper(disposer) {
+        disposers[j] = disposer;
+        if (indexes) {
+          const [s, set] = createSignal(j);
+          indexes[j] = set;
+          return mapFn(newItems[j], s);
+        }
+        return mapFn(newItems[j]);
+      }
+    };
+  }
   function indexArray(list, mapFn, options = {}) {
     let items = [], mapped = [], disposers = [], signals = [], len = 0, i;
     onCleanup(() => dispose(disposers));
@@ -590,6 +680,12 @@ var __publicField = (obj, key, value) => {
         return [...new Set(keys)];
       }
     }, propTraps);
+  }
+  function For(props) {
+    const fallback = "fallback" in props && {
+      fallback: () => props.fallback
+    };
+    return createMemo(mapArray(() => props.each, props.children, fallback ? fallback : void 0));
   }
   function Index(props) {
     const fallback = "fallback" in props && {
@@ -1150,24 +1246,26 @@ ${html}. Is your HTML properly formed?`;
     win.document.head.append(title);
     return win;
   }
-  const startButton = "_startButton_nz33a_1";
-  const settings$1 = "_settings_nz33a_7";
-  const logs = "_logs_nz33a_8";
-  const settingsEntry = "_settingsEntry_nz33a_16";
-  const settingsSubmit = "_settingsSubmit_nz33a_21";
-  const logsEntry = "_logsEntry_nz33a_40";
-  const logsTimer = "_logsTimer_nz33a_41";
+  const startButton = "_startButton_101o4_1";
+  const settings$1 = "_settings_101o4_7";
+  const logs = "_logs_101o4_8";
+  const settingsEntry = "_settingsEntry_101o4_16";
+  const settingsSubmit = "_settingsSubmit_101o4_21";
+  const datalist = "_datalist_101o4_33";
+  const logsEntry = "_logsEntry_101o4_41";
+  const logsTimer = "_logsTimer_101o4_42";
   const style = {
     startButton,
     settings: settings$1,
     logs,
     settingsEntry,
     settingsSubmit,
+    datalist,
     logsEntry,
     logsTimer
   };
-  const styleCss = '._startButton_nz33a_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_nz33a_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_nz33a_7,\n._logs_nz33a_8 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 15rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_nz33a_16 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.5rem;\n}\n._settingsSubmit_nz33a_21 {\n  display: flex;\n  justify-content: end;\n}\n._settings_nz33a_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_nz33a_7 button,\n._settings_nz33a_7 input {\n  font-size: 0.7rem;\n}\n._settings_nz33a_7 input {\n  width: 6rem;\n  text-align: left;\n}\n._settings_nz33a_7 input[type="checkbox"] {\n  width: auto;\n}\n._logsEntry_nz33a_40,\n._logsTimer_nz33a_41 {\n  margin-bottom: 0.5rem;\n}\n._logsTimer_nz33a_41 {\n  color: blue;\n}\n._logsEntry_nz33a_40[data-type="SUCCESS"] {\n  color: green;\n}\n._logsEntry_nz33a_40[data-type="FAIL"] {\n  color: red;\n}\n';
-  const _tmpl$$1 = /* @__PURE__ */ template(`<span></span>`, 2);
+  const styleCss = '._startButton_101o4_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_101o4_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_101o4_7,\n._logs_101o4_8 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 16rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_101o4_16 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.3rem;\n}\n._settingsSubmit_101o4_21 {\n  display: flex;\n  justify-content: end;\n}\n._settings_101o4_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_101o4_7 button,\n._settings_101o4_7 input {\n  font-size: 0.7rem;\n}\n._settings_101o4_7 ._datalist_101o4_33,\n._settings_101o4_7 input {\n  width: 7rem;\n  text-align: left;\n}\n._settings_101o4_7 input[type="checkbox"] {\n  width: auto;\n}\n._logsEntry_101o4_41,\n._logsTimer_101o4_42 {\n  margin-bottom: 0.5rem;\n}\n._logsTimer_101o4_42 {\n  color: blue;\n}\n._logsEntry_101o4_41[data-type="SUCCESS"] {\n  color: green;\n}\n._logsEntry_101o4_41[data-type="FAIL"] {\n  color: red;\n}\n._datalist_101o4_33 {\n  display: flex;\n  align-content: center;\n}\n._datalist_101o4_33 button {\n  font-size: 0.3rem;\n  padding: 0 0.15rem;\n}\n._datalist_101o4_33 input {\n  width: 100%;\n}\n';
+  const _tmpl$$2 = /* @__PURE__ */ template(`<span></span>`, 2);
   function injectStyle(doc) {
     const css = doc.createElement("style");
     css.textContent = styleCss;
@@ -1177,7 +1275,7 @@ ${html}. Is your HTML properly formed?`;
     document.querySelectorAll("li.cls_sec ul.sec_it_list li.it").forEach((room) => {
       const a = assertNonNullable(room.firstElementChild);
       render(() => (() => {
-        const _el$ = _tmpl$$1.cloneNode(true);
+        const _el$ = _tmpl$$2.cloneNode(true);
         _el$.addEventListener("click", (ev) => {
           ev.stopPropagation();
           const url = relURL(assertNonNullable(room.getAttribute("url")));
@@ -1445,6 +1543,7 @@ ${html}. Is your HTML properly formed?`;
     return val;
   }
   const [state, setState] = createStore({
+    marked: getOrDefault("marked", []),
     amStart: getOrDefault("amStart", "08:00"),
     amEnd: getOrDefault("amEnd", "12:00"),
     pmStart: getOrDefault("pmStart", "14:00"),
@@ -1539,6 +1638,41 @@ ${html}. Is your HTML properly formed?`;
     }).forEach(([key, val]) => url.searchParams.set(key, val));
     return await fetch(url).then((t) => t.json());
   }
+  const _tmpl$$1 = /* @__PURE__ */ template(`<span><input><datalist></datalist><button type="button">\u2796</button><button type="button">\u2795</button></span>`, 9), _tmpl$2$1 = /* @__PURE__ */ template(`<option></option>`, 2);
+  function DataList(props) {
+    const id = `datalist-${Date.now()}`;
+    const [current, setCurrent] = createSignal("");
+    const [_, setData] = createSignal(props.value);
+    return (() => {
+      const _el$ = _tmpl$$1.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling, _el$4 = _el$3.nextSibling, _el$5 = _el$4.nextSibling;
+      _el$2.addEventListener("change", (ev) => setCurrent(ev.currentTarget.value.trim()));
+      setAttribute(_el$2, "list", id);
+      setAttribute(_el$3, "id", id);
+      insert(_el$3, createComponent(For, {
+        get each() {
+          return props.value;
+        },
+        children: (item) => (() => {
+          const _el$6 = _tmpl$2$1.cloneNode(true);
+          _el$6.value = item;
+          return _el$6;
+        })()
+      }));
+      _el$4.addEventListener("click", () => props.onChange(setData((data) => data.filter((v) => v !== current()))));
+      _el$5.addEventListener("click", () => current() === "" ? void 0 : props.onChange(setData((data) => data.includes(current()) ? Array.from(data) : data.concat(current()))));
+      createRenderEffect((_p$) => {
+        const _v$ = style.datalist, _v$2 = props.id;
+        _v$ !== _p$._v$ && className(_el$, _p$._v$ = _v$);
+        _v$2 !== _p$._v$2 && setAttribute(_el$2, "id", _p$._v$2 = _v$2);
+        return _p$;
+      }, {
+        _v$: void 0,
+        _v$2: void 0
+      });
+      createRenderEffect(() => _el$2.value = current());
+      return _el$;
+    })();
+  }
   const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label> </label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div><span>\u7B49\u5F85\u4E2D\uFF0C\u4E8E <!> \u540E\u5F00\u59CB\u6267\u884C</span></div>`, 5), _tmpl$5 = /* @__PURE__ */ template(`<div><i>*\u5173\u95ED\u7A97\u53E3\u4EE5\u53D6\u6D88\u9884\u7EA6</i></div>`, 4), _tmpl$6 = /* @__PURE__ */ template(`<div></div>`, 2);
   var LogType;
   (function(LogType2) {
@@ -1559,6 +1693,18 @@ ${html}. Is your HTML properly formed?`;
     if (settings.random) {
       const offset = Math.random() * rsvSta.data.length;
       rsvSta.data = rsvSta.data.slice(offset).concat(rsvSta.data.slice(0, offset));
+    }
+    const marked = settings.marked;
+    if (marked.length > 0) {
+      const newData = [];
+      for (const data of rsvSta.data) {
+        if (marked.includes(data.devName)) {
+          newData.unshift(data);
+        } else {
+          newData.push(data);
+        }
+      }
+      rsvSta.data = newData;
     }
     const occupy = (prefix, start, end, minMinutes) => {
       const checker = new RsvChecker(rsvDate, [start, end], [settings.openStart, settings.openEnd], minMinutes);
@@ -1585,11 +1731,12 @@ ${html}. Is your HTML properly formed?`;
     }
   }
   function Entry(props) {
+    const id = createMemo(() => `input-${Date.now()}`);
     const Input2 = (props2) => (() => {
       const _el$ = _tmpl$.cloneNode(true);
       spread(_el$, props2, false, false);
       createRenderEffect((_p$) => {
-        const _v$ = props.name, _v$2 = props.type;
+        const _v$ = id(), _v$2 = props.type;
         _v$ !== _p$._v$ && setAttribute(_el$, "id", _p$._v$ = _v$);
         _v$2 !== _p$._v$2 && setAttribute(_el$, "type", _p$._v$2 = _v$2);
         return _p$;
@@ -1641,11 +1788,26 @@ ${html}. Is your HTML properly formed?`;
                 onChange: (ev) => props.onChange(unsafeCast(ev.currentTarget.checked))
               });
             }
+          }), createComponent(Match, {
+            get when() {
+              return props.type === "datalist";
+            },
+            get children() {
+              return createComponent(DataList, {
+                get id() {
+                  return id();
+                },
+                get value() {
+                  return unsafeCast(props.value);
+                },
+                onChange: (v) => setSetting("marked", v)
+              });
+            }
           })];
         }
       }), null);
       createRenderEffect((_p$) => {
-        const _v$3 = style.settingsEntry, _v$4 = props.name, _v$5 = props.label;
+        const _v$3 = style.settingsEntry, _v$4 = id(), _v$5 = props.label;
         _v$3 !== _p$._v$3 && className(_el$2, _p$._v$3 = _v$3);
         _v$4 !== _p$._v$4 && setAttribute(_el$3, "for", _p$._v$4 = _v$4);
         _v$5 !== _p$._v$5 && (_el$4.data = _p$._v$5 = _v$5);
@@ -1687,6 +1849,11 @@ ${html}. Is your HTML properly formed?`;
         ev.preventDefault();
         props.onSubmit(args);
       });
+      insert(_el$5, createComponent(LocalEntry, {
+        name: "marked",
+        label: "\u4F18\u5148\u5EA7\u4F4D",
+        type: "datalist"
+      }), _el$6);
       insert(_el$5, createComponent(ArgsEntry, {
         name: "rsvDate",
         label: "\u9884\u7EA6\u65E5\u671F",
@@ -1794,9 +1961,7 @@ ${html}. Is your HTML properly formed?`;
     injectStyle(win.document);
     render(() => {
       const [stage, setStage] = createSignal(OccupyStage.Prepare);
-      const [logs2, setLogs] = createSignal([], {
-        equals: false
-      });
+      const [logs2, setLogs] = createSignal([]);
       const [remain, setRemain] = createSignal(-1);
       return (() => {
         const _el$8 = _tmpl$6.cloneNode(true);
@@ -1812,10 +1977,7 @@ ${html}. Is your HTML properly formed?`;
                     const occupy = () => {
                       performOccupation(roomId, args, (log) => {
                         devLog(log.msg);
-                        setLogs((logs3) => {
-                          logs3.push(log);
-                          return logs3;
-                        });
+                        setLogs((logs3) => logs3.concat(log));
                       });
                     };
                     setStage(OccupyStage.Perform);
@@ -1824,7 +1986,7 @@ ${html}. Is your HTML properly formed?`;
                     } else {
                       const startTime = hhmm2date(new Date().toLocaleDateString(), settings.tryStart);
                       const timer = setInterval(() => {
-                        setRemain(startTime.getTime() - new Date().getTime());
+                        setRemain(startTime.getTime() - Date.now());
                         if (remain() <= 0) {
                           clearInterval(timer);
                           occupy();
