@@ -49,8 +49,13 @@
 }
 
 .logs {
-  &Entry {
+  &Entry,
+  &Timer {
     margin-bottom: 0.5rem;
+  }
+
+  &Timer {
+    color: blue;
   }
 
   &Entry[data-type="SUCCESS"] {

@@ -1,4 +1,4 @@
-import { relURL } from "./utils";
+import { hhmm2date, relURL } from "./utils";
 
 // 图书馆预约状态
 export interface RsvSta {
@@ -19,10 +19,6 @@ export interface RsvStaData {
 export interface RsvStaDataTs {
   start: string;
   end: string;
-}
-
-function hhmm2date(date: string, hhmm: string): Date {
-  return new Date(`${date} ${hhmm}`);
 }
 
 /**
