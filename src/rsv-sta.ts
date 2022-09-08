@@ -1,10 +1,10 @@
-import { hhmm2date, relURL } from "./utils";
+import { devLog, hhmm2date, relURL } from "./utils";
 
 // 图书馆预约状态
 export interface RsvSta {
-  act: string;
-  data: RsvStaData[];
   ret: number;
+  msg: string;
+  data: RsvStaData[];
 }
 
 // 单座预约信息
@@ -62,7 +62,6 @@ export class RsvChecker {
   minMs: number;
 
   /**
-   *
    * @param date 预约日期
    * @param rsvSpan 预约时段
    * @param openSpan 图书馆营业时段
@@ -135,22 +134,75 @@ export async function fetchRsvSta(
   date: string,
   roomId: string
 ): Promise<RsvSta> {
-  const url = relURL("/ClientWeb/pro/ajax/device.aspx");
-  // 设定参数
-  Object.entries({
-    byType: "devcls",
-    classkind: "8",
-    display: "fp",
-    md: "d",
-    room_id: roomId,
-    purpose: "",
-    selectOpenAty: "",
-    cld_name: "default",
-    date: date,
-    fr_start: openSpan[0],
-    fr_end: openSpan[1],
-    act: "get_rsv_sta",
-    // _: "xxx",
-  }).forEach(([key, val]) => url.searchParams.set(key, val));
+  const url = relURL(
+    "/ClientWeb/pro/ajax/device.aspx",
+    // 设定参数
+    {
+      byType: "devcls",
+      classkind: "8",
+      display: "fp",
+      md: "d",
+      room_id: roomId,
+      purpose: "",
+      selectOpenAty: "",
+      cld_name: "default",
+      date: date,
+      fr_start: openSpan[0],
+      fr_end: openSpan[1],
+      act: "get_rsv_sta",
+      // _: "xxx",
+    }
+  );
+  devLog(`请求预约信息：${url}`);
+  return await fetch(url).then((t) => t.json());
+}
+
+interface SetRsv {
+  ret: number;
+  msg: string;
+}
+
+/**
+ * 发起预约请求
+ *
+ * ```ts
+ * postRsv("1000000", "09-01", "08:00", "12:00")
+ * ```
+ *
+ * @param devId
+ * @param date
+ * @param start
+ * @param end
+ * @returns
+ */
+export async function fetchSetRsv(
+  devId: string,
+  date: string,
+  start: string,
+  end: string
+): Promise<SetRsv> {
+  const url = relURL("/ClientWeb/pro/ajax/reserve.aspx", {
+    dialogid: "",
+    dev_id: devId,
+    lab_id: "",
+    kind_id: "",
+    room_id: "",
+    type: "dev",
+    prop: "",
+    test_id: "",
+    term: "",
+    Vnumber: "",
+    classkind: "",
+    test_name: "",
+    start: `${date} ${start}`,
+    end: `${date} ${end}`,
+    start_time: start.replace(":", ""),
+    end_time: end.replace(":", ""),
+    up_file: "",
+    memo: "",
+    act: "set_resv",
+    // _:
+  });
+  devLog(`发起预约请求：${url}`);
   return await fetch(url).then((t) => t.json());
 }

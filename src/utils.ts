@@ -10,8 +10,12 @@ export function unsafeCast<T, U>(t: T): U {
   return t as unknown as U;
 }
 
-export function relURL(path: string): URL {
-  return new URL(path, window.location.href);
+export function relURL(path: string, params?: { [k: string]: string }): URL {
+  const url = new URL(path, window.location.href);
+  for (const [key, val] of Object.entries(params ?? {})) {
+    url.searchParams.set(key, val);
+  }
+  return url;
 }
 
 export function hhmm2date(date: string, hhmm: string): Date {
