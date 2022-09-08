@@ -4,7 +4,6 @@ import { setSetting, settings, Settings } from "./settings";
 import {
   date2hhmm,
   date2mmss,
-  devLog,
   hhmm2date,
   KeyOfType,
   openWin,
@@ -17,22 +16,14 @@ import {
   Index,
   JSX,
   Match,
+  onCleanup,
   Show,
   Switch,
 } from "solid-js";
-import { RsvChecker, fetchRsvSta } from "./rsv-sta";
+import { RsvChecker, fetchRsvSta, fetchSetRsv } from "./rsv-sta";
 import { createStore } from "solid-js/store";
 import { DataList } from "./datalist";
-
-enum LogType {
-  Success = "SUCCESS",
-  Fail = "FAIL",
-}
-
-interface Log {
-  type: LogType;
-  msg: string;
-}
+import { Log, logger } from "./logger";
 
 function tomorrow(): string {
   const date = new Date();
@@ -45,77 +36,7 @@ interface Args {
   eagerly: boolean;
   rsvAm: boolean;
   rsvPm: boolean;
-}
-
-/**
- * 执行占座程序
- */
-async function performOccupation(
-  roomId: string,
-  { rsvDate, rsvAm, rsvPm }: Args,
-  onLog: (msg: Log) => void
-) {
-  const rsvSta = await fetchRsvSta(
-    [settings.openStart, settings.openEnd],
-    rsvDate,
-    roomId
-  );
-
-  if (settings.random) {
-    // 将预约数据随意旋转一个偏移量
-    const offset = Math.random() * rsvSta.data.length;
-    rsvSta.data = rsvSta.data
-      .slice(offset)
-      .concat(rsvSta.data.slice(0, offset));
-  }
-
-  const marked = settings.marked;
-  if (marked.length > 0) {
-    // 将优先预约的座位移动到最前面
-    const newData = [];
-    for (const data of rsvSta.data) {
-      if (marked.includes(data.devName)) {
-        newData.unshift(data);
-      } else {
-        newData.push(data);
-      }
-    }
-    rsvSta.data = newData;
-  }
-
-  const occupy = (
-    prefix: string,
-    start: string,
-    end: string,
-    minMinutes: number
-  ) => {
-    const checker = new RsvChecker(
-      rsvDate,
-      [start, end],
-      [settings.openStart, settings.openEnd],
-      minMinutes
-    );
-    for (const data of rsvSta.data) {
-      const spare = checker.check(data);
-      if (spare != null) {
-        onLog({
-          type: LogType.Success,
-          msg: `${prefix}预约成功：${date2hhmm(spare[0])}-${date2hhmm(
-            spare[1]
-          )} 于 ${data.devName} 座`,
-        });
-        return;
-      }
-    }
-    onLog({ type: LogType.Fail, msg: `${prefix}预约失败！` });
-  };
-
-  if (rsvAm) {
-    occupy("上午", settings.amStart, settings.amEnd, settings.amMinMinutes);
-  }
-  if (rsvPm) {
-    occupy("下午", settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
-  }
+  _postReq: boolean; // DEV ONLY
 }
 
 interface InputTypeMap {
@@ -216,6 +137,7 @@ function Setting(props: { onSubmit: (args: Args) => void }) {
     eagerly: false,
     rsvAm: true,
     rsvPm: true,
+    _postReq: false,
   });
 
   /**
@@ -269,6 +191,9 @@ function Setting(props: { onSubmit: (args: Args) => void }) {
       <ArgsEntry name="rsvAm" label="预约上午" type="checkbox" />
       <ArgsEntry name="rsvPm" label="预约下午" type="checkbox" />
       <ArgsEntry name="eagerly" label="立即执行" type="checkbox" />
+      <Show when={__DEV_MODE}>
+        <ArgsEntry name="_postReq" label="[DEV]发起预约请求" type="checkbox" />
+      </Show>
       <div class={style.settingsSubmit}>
         <button type="submit" textContent={"执行"} />
       </div>
@@ -294,6 +219,12 @@ export function prepareOccupation(roomId: string) {
     const [logs, setLogs] = createSignal<Log[]>([]);
     const [remain, setRemain] = createSignal<number>(-1);
 
+    const unsubscribe = logger.subscribe((log) => {
+      setLogs((logs) => logs.concat(log));
+    });
+
+    onCleanup(() => unsubscribe());
+
     return (
       <div>
         <Switch>
@@ -301,10 +232,7 @@ export function prepareOccupation(roomId: string) {
             <Setting
               onSubmit={(args) => {
                 const occupy = () => {
-                  performOccupation(roomId, args, (log) => {
-                    devLog(log.msg);
-                    setLogs((logs) => logs.concat(log));
-                  });
+                  performOccupation(roomId, args);
                 };
 
                 setStage(OccupyStage.Perform);
@@ -325,7 +253,6 @@ export function prepareOccupation(roomId: string) {
                   }, 100);
                   // 关闭窗口时取消执行
                   win.addEventListener("unload", () => {
-                    devLog("取消预约");
                     clearInterval(timer);
                   });
                 }
@@ -358,4 +285,92 @@ export function prepareOccupation(roomId: string) {
     );
   }, win.document.body);
   return;
+}
+
+/**
+ * 执行占座程序
+ */
+async function performOccupation(
+  roomId: string,
+  { rsvDate, rsvAm, rsvPm, _postReq }: Args
+) {
+  logger.info("请求预约信息…");
+  const rsvSta = await fetchRsvSta(
+    [settings.openStart, settings.openEnd],
+    rsvDate,
+    roomId
+  );
+
+  if (rsvSta.ret !== 1) {
+    logger.err(`请求失败：${rsvSta.msg}`);
+    return;
+  } else {
+    logger.ok("请求成功！");
+  }
+
+  if (settings.random) {
+    // 将预约数据随意旋转一个偏移量
+    const offset = Math.random() * rsvSta.data.length;
+    rsvSta.data = rsvSta.data
+      .slice(offset)
+      .concat(rsvSta.data.slice(0, offset));
+  }
+
+  const marked = settings.marked;
+  if (marked.length > 0) {
+    // 将优先预约的座位移动到最前面
+    const newData = [];
+    for (const data of rsvSta.data) {
+      if (marked.includes(data.devName)) {
+        newData.unshift(data);
+      } else {
+        newData.push(data);
+      }
+    }
+    rsvSta.data = newData;
+  }
+
+  const occupy = async (
+    start: string,
+    end: string,
+    minMinutes: number
+  ): Promise<void> => {
+    logger.info("寻找空座…");
+    const checker = new RsvChecker(
+      rsvDate,
+      [start, end],
+      [settings.openStart, settings.openEnd],
+      minMinutes
+    );
+    for (const data of rsvSta.data) {
+      const spare = checker.check(data);
+      if (spare != null) {
+        logger.ok(
+          `找到空座：${data.devName}，${date2hhmm(spare[0])}-${date2hhmm(
+            spare[1]
+          )}`
+        );
+        if (!__DEV_MODE || _postReq) {
+          logger.info("发起预约请求…");
+          const setRsv = await fetchSetRsv(data.devId, rsvDate, start, end);
+          if (setRsv.ret !== 1) {
+            logger.err(`请求失败：${setRsv.msg}`);
+          } else {
+            logger.ok("请求成功！");
+          }
+        }
+        return;
+      }
+    }
+    logger.err("未找到空座！");
+  };
+
+  if (rsvAm) {
+    logger.info("预约上午…");
+    await occupy(settings.amStart, settings.amEnd, settings.amMinMinutes);
+  }
+  if (rsvPm) {
+    logger.info("预约下午…");
+    await occupy(settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
+  }
 }

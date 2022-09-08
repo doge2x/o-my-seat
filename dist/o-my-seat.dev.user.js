@@ -1205,8 +1205,12 @@ ${html}. Is your HTML properly formed?`;
   function unsafeCast(t) {
     return t;
   }
-  function relURL(path) {
-    return new URL(path, window.location.href);
+  function relURL(path, params) {
+    const url = new URL(path, window.location.href);
+    for (const [key, val] of Object.entries(params != null ? params : {})) {
+      url.searchParams.set(key, val);
+    }
+    return url;
   }
   function hhmm2date(date, hhmm) {
     return new Date(`${date} ${hhmm}`);
@@ -1246,14 +1250,14 @@ ${html}. Is your HTML properly formed?`;
     win.document.head.append(title);
     return win;
   }
-  const startButton = "_startButton_101o4_1";
-  const settings$1 = "_settings_101o4_7";
-  const logs = "_logs_101o4_8";
-  const settingsEntry = "_settingsEntry_101o4_16";
-  const settingsSubmit = "_settingsSubmit_101o4_21";
-  const datalist = "_datalist_101o4_33";
-  const logsEntry = "_logsEntry_101o4_41";
-  const logsTimer = "_logsTimer_101o4_42";
+  const startButton = "_startButton_scxi1_1";
+  const settings$1 = "_settings_scxi1_7";
+  const logs = "_logs_scxi1_8";
+  const settingsEntry = "_settingsEntry_scxi1_16";
+  const settingsSubmit = "_settingsSubmit_scxi1_21";
+  const datalist = "_datalist_scxi1_33";
+  const logsEntry = "_logsEntry_scxi1_41";
+  const logsTimer = "_logsTimer_scxi1_42";
   const style = {
     startButton,
     settings: settings$1,
@@ -1264,7 +1268,7 @@ ${html}. Is your HTML properly formed?`;
     logsEntry,
     logsTimer
   };
-  const styleCss = '._startButton_101o4_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_101o4_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_101o4_7,\n._logs_101o4_8 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 16rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_101o4_16 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.3rem;\n}\n._settingsSubmit_101o4_21 {\n  display: flex;\n  justify-content: end;\n}\n._settings_101o4_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_101o4_7 button,\n._settings_101o4_7 input {\n  font-size: 0.7rem;\n}\n._settings_101o4_7 ._datalist_101o4_33,\n._settings_101o4_7 input {\n  width: 7rem;\n  text-align: left;\n}\n._settings_101o4_7 input[type="checkbox"] {\n  width: auto;\n}\n._logsEntry_101o4_41,\n._logsTimer_101o4_42 {\n  margin-bottom: 0.5rem;\n}\n._logsTimer_101o4_42 {\n  color: blue;\n}\n._logsEntry_101o4_41[data-type="SUCCESS"] {\n  color: green;\n}\n._logsEntry_101o4_41[data-type="FAIL"] {\n  color: red;\n}\n._datalist_101o4_33 {\n  display: flex;\n  align-content: center;\n}\n._datalist_101o4_33 button {\n  font-size: 0.3rem;\n  padding: 0 0.15rem;\n}\n._datalist_101o4_33 input {\n  width: 100%;\n}\n';
+  const styleCss = '._startButton_scxi1_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_scxi1_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_scxi1_7,\n._logs_scxi1_8 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 16rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_scxi1_16 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.3rem;\n}\n._settingsSubmit_scxi1_21 {\n  display: flex;\n  justify-content: end;\n}\n._settings_scxi1_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_scxi1_7 button,\n._settings_scxi1_7 input {\n  font-size: 0.7rem;\n}\n._settings_scxi1_7 ._datalist_scxi1_33,\n._settings_scxi1_7 input {\n  width: 7rem;\n  text-align: left;\n}\n._settings_scxi1_7 input[type="checkbox"] {\n  width: auto;\n}\n._logsEntry_scxi1_41,\n._logsTimer_scxi1_42 {\n  margin-bottom: 0.5rem;\n}\n._logsTimer_scxi1_42 {\n  color: blue;\n}\n._logsEntry_scxi1_41[data-type="OK"] {\n  color: green;\n}\n._logsEntry_scxi1_41[data-type="ERR"] {\n  color: red;\n}\n._logsEntry_scxi1_41[data-type="INFO"] {\n  color: gray;\n}\n._datalist_scxi1_33 {\n  display: flex;\n  align-content: center;\n}\n._datalist_scxi1_33 button {\n  font-size: 0.3rem;\n  padding: 0 0.15rem;\n}\n._datalist_scxi1_33 input {\n  width: 100%;\n}\n';
   const _tmpl$$2 = /* @__PURE__ */ template(`<span></span>`, 2);
   function injectStyle(doc) {
     const css = doc.createElement("style");
@@ -1621,21 +1625,49 @@ ${html}. Is your HTML properly formed?`;
     }
   }
   async function fetchRsvSta(openSpan, date, roomId) {
-    const url = relURL("/ClientWeb/pro/ajax/device.aspx");
-    Object.entries({
-      byType: "devcls",
-      classkind: "8",
-      display: "fp",
-      md: "d",
-      room_id: roomId,
-      purpose: "",
-      selectOpenAty: "",
-      cld_name: "default",
-      date,
-      fr_start: openSpan[0],
-      fr_end: openSpan[1],
-      act: "get_rsv_sta"
-    }).forEach(([key, val]) => url.searchParams.set(key, val));
+    const url = relURL(
+      "/ClientWeb/pro/ajax/device.aspx",
+      {
+        byType: "devcls",
+        classkind: "8",
+        display: "fp",
+        md: "d",
+        room_id: roomId,
+        purpose: "",
+        selectOpenAty: "",
+        cld_name: "default",
+        date,
+        fr_start: openSpan[0],
+        fr_end: openSpan[1],
+        act: "get_rsv_sta"
+      }
+    );
+    devLog(`\u8BF7\u6C42\u9884\u7EA6\u4FE1\u606F\uFF1A${url}`);
+    return await fetch(url).then((t) => t.json());
+  }
+  async function fetchSetRsv(devId, date, start, end) {
+    const url = relURL("/ClientWeb/pro/ajax/reserve.aspx", {
+      dialogid: "",
+      dev_id: devId,
+      lab_id: "",
+      kind_id: "",
+      room_id: "",
+      type: "dev",
+      prop: "",
+      test_id: "",
+      term: "",
+      Vnumber: "",
+      classkind: "",
+      test_name: "",
+      start: `${date} ${start}`,
+      end: `${date} ${end}`,
+      start_time: start.replace(":", ""),
+      end_time: end.replace(":", ""),
+      up_file: "",
+      memo: "",
+      act: "set_resv"
+    });
+    devLog(`\u53D1\u8D77\u9884\u7EA6\u8BF7\u6C42\uFF1A${url}`);
     return await fetch(url).then((t) => t.json());
   }
   const _tmpl$$1 = /* @__PURE__ */ template(`<span><input><datalist></datalist><button type="button">\u2796</button><button type="button">\u2795</button></span>`, 9), _tmpl$2$1 = /* @__PURE__ */ template(`<option></option>`, 2);
@@ -1673,62 +1705,37 @@ ${html}. Is your HTML properly formed?`;
       return _el$;
     })();
   }
+  class Logger {
+    constructor() {
+      __publicField(this, "subscribers", []);
+    }
+    subscribe(f) {
+      const id = this.subscribers.length;
+      this.subscribers.push(f);
+      return () => this.subscribers[id] = () => void 0;
+    }
+    send(log) {
+      for (const sub of this.subscribers) {
+        sub(log);
+      }
+    }
+    info(msg) {
+      this.send({ type: "INFO", msg });
+    }
+    ok(msg) {
+      this.send({ type: "OK", msg });
+    }
+    err(msg) {
+      this.send({ type: "ERR", msg });
+    }
+  }
+  const logger = new Logger();
+  logger.subscribe((log) => devLog(log.msg));
   const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label> </label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div><span>\u7B49\u5F85\u4E2D\uFF0C\u4E8E <!> \u540E\u5F00\u59CB\u6267\u884C</span></div>`, 5), _tmpl$5 = /* @__PURE__ */ template(`<div><i>*\u5173\u95ED\u7A97\u53E3\u4EE5\u53D6\u6D88\u9884\u7EA6</i></div>`, 4), _tmpl$6 = /* @__PURE__ */ template(`<div></div>`, 2);
-  var LogType;
-  (function(LogType2) {
-    LogType2["Success"] = "SUCCESS";
-    LogType2["Fail"] = "FAIL";
-  })(LogType || (LogType = {}));
   function tomorrow() {
     const date = new Date();
     date.setDate(date.getDate() + 1);
     return date.toISOString().split("T")[0];
-  }
-  async function performOccupation(roomId, {
-    rsvDate,
-    rsvAm,
-    rsvPm
-  }, onLog) {
-    const rsvSta = await fetchRsvSta([settings.openStart, settings.openEnd], rsvDate, roomId);
-    if (settings.random) {
-      const offset = Math.random() * rsvSta.data.length;
-      rsvSta.data = rsvSta.data.slice(offset).concat(rsvSta.data.slice(0, offset));
-    }
-    const marked = settings.marked;
-    if (marked.length > 0) {
-      const newData = [];
-      for (const data of rsvSta.data) {
-        if (marked.includes(data.devName)) {
-          newData.unshift(data);
-        } else {
-          newData.push(data);
-        }
-      }
-      rsvSta.data = newData;
-    }
-    const occupy = (prefix, start, end, minMinutes) => {
-      const checker = new RsvChecker(rsvDate, [start, end], [settings.openStart, settings.openEnd], minMinutes);
-      for (const data of rsvSta.data) {
-        const spare = checker.check(data);
-        if (spare != null) {
-          onLog({
-            type: LogType.Success,
-            msg: `${prefix}\u9884\u7EA6\u6210\u529F\uFF1A${date2hhmm(spare[0])}-${date2hhmm(spare[1])} \u4E8E ${data.devName} \u5EA7`
-          });
-          return;
-        }
-      }
-      onLog({
-        type: LogType.Fail,
-        msg: `${prefix}\u9884\u7EA6\u5931\u8D25\uFF01`
-      });
-    };
-    if (rsvAm) {
-      occupy("\u4E0A\u5348", settings.amStart, settings.amEnd, settings.amMinMinutes);
-    }
-    if (rsvPm) {
-      occupy("\u4E0B\u5348", settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
-    }
   }
   function Entry(props) {
     const id = createMemo(() => `input-${Date.now()}`);
@@ -1833,7 +1840,8 @@ ${html}. Is your HTML properly formed?`;
       rsvDate: tomorrow(),
       eagerly: false,
       rsvAm: true,
-      rsvPm: true
+      rsvPm: true,
+      _postReq: false
     });
     function ArgsEntry(props2) {
       return createComponent(Entry, mergeProps({
@@ -1934,6 +1942,16 @@ ${html}. Is your HTML properly formed?`;
         label: "\u7ACB\u5373\u6267\u884C",
         type: "checkbox"
       }), _el$6);
+      insert(_el$5, createComponent(Show, {
+        when: true,
+        get children() {
+          return createComponent(ArgsEntry, {
+            name: "_postReq",
+            label: "[DEV]\u53D1\u8D77\u9884\u7EA6\u8BF7\u6C42",
+            type: "checkbox"
+          });
+        }
+      }), _el$6);
       _el$7.textContent = "\u6267\u884C";
       createRenderEffect((_p$) => {
         const _v$6 = style.settings, _v$7 = style.settingsSubmit;
@@ -1963,6 +1981,10 @@ ${html}. Is your HTML properly formed?`;
       const [stage, setStage] = createSignal(OccupyStage.Prepare);
       const [logs2, setLogs] = createSignal([]);
       const [remain, setRemain] = createSignal(-1);
+      const unsubscribe = logger.subscribe((log) => {
+        setLogs((logs3) => logs3.concat(log));
+      });
+      onCleanup(() => unsubscribe());
       return (() => {
         const _el$8 = _tmpl$6.cloneNode(true);
         insert(_el$8, createComponent(Switch, {
@@ -1975,10 +1997,7 @@ ${html}. Is your HTML properly formed?`;
                 return createComponent(Setting, {
                   onSubmit: (args) => {
                     const occupy = () => {
-                      performOccupation(roomId, args, (log) => {
-                        devLog(log.msg);
-                        setLogs((logs3) => logs3.concat(log));
-                      });
+                      performOccupation(roomId, args);
                     };
                     setStage(OccupyStage.Perform);
                     if (args.eagerly) {
@@ -1993,7 +2012,6 @@ ${html}. Is your HTML properly formed?`;
                         }
                       }, 100);
                       win.addEventListener("unload", () => {
-                        devLog("\u53D6\u6D88\u9884\u7EA6");
                         clearInterval(timer);
                       });
                     }
@@ -2053,6 +2071,66 @@ ${html}. Is your HTML properly formed?`;
       })();
     }, win.document.body);
     return;
+  }
+  async function performOccupation(roomId, {
+    rsvDate,
+    rsvAm,
+    rsvPm,
+    _postReq
+  }) {
+    logger.info("\u8BF7\u6C42\u9884\u7EA6\u4FE1\u606F\u2026");
+    const rsvSta = await fetchRsvSta([settings.openStart, settings.openEnd], rsvDate, roomId);
+    if (rsvSta.ret !== 1) {
+      logger.err(`\u8BF7\u6C42\u5931\u8D25\uFF1A${rsvSta.msg}`);
+      return;
+    } else {
+      logger.ok("\u8BF7\u6C42\u6210\u529F\uFF01");
+    }
+    if (settings.random) {
+      const offset = Math.random() * rsvSta.data.length;
+      rsvSta.data = rsvSta.data.slice(offset).concat(rsvSta.data.slice(0, offset));
+    }
+    const marked = settings.marked;
+    if (marked.length > 0) {
+      const newData = [];
+      for (const data of rsvSta.data) {
+        if (marked.includes(data.devName)) {
+          newData.unshift(data);
+        } else {
+          newData.push(data);
+        }
+      }
+      rsvSta.data = newData;
+    }
+    const occupy = async (start, end, minMinutes) => {
+      logger.info("\u5BFB\u627E\u7A7A\u5EA7\u2026");
+      const checker = new RsvChecker(rsvDate, [start, end], [settings.openStart, settings.openEnd], minMinutes);
+      for (const data of rsvSta.data) {
+        const spare = checker.check(data);
+        if (spare != null) {
+          logger.ok(`\u627E\u5230\u7A7A\u5EA7\uFF1A${data.devName}\uFF0C${date2hhmm(spare[0])}-${date2hhmm(spare[1])}`);
+          if (_postReq) {
+            logger.info("\u53D1\u8D77\u9884\u7EA6\u8BF7\u6C42\u2026");
+            const setRsv = await fetchSetRsv(data.devId, rsvDate, start, end);
+            if (setRsv.ret !== 1) {
+              logger.err(`\u8BF7\u6C42\u5931\u8D25\uFF1A${setRsv.msg}`);
+            } else {
+              logger.ok("\u8BF7\u6C42\u6210\u529F\uFF01");
+            }
+          }
+          return;
+        }
+      }
+      logger.err("\u672A\u627E\u5230\u7A7A\u5EA7\uFF01");
+    };
+    if (rsvAm) {
+      logger.info("\u9884\u7EA6\u4E0A\u5348\u2026");
+      await occupy(settings.amStart, settings.amEnd, settings.amMinMinutes);
+    }
+    if (rsvPm) {
+      logger.info("\u9884\u7EA6\u4E0B\u5348\u2026");
+      await occupy(settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
+    }
   }
   function main() {
     injectStyle(document);
