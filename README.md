@@ -20,6 +20,12 @@ Oh, occupy that seat for me, plz.
 
 ![设置界面](assets/settings.png)
 
+### 注意事项
+
+【优先座位】使用的名字是预约时显示的座位名字，如下图所示，
+
+![预约信息](assets/rev-info.png)
+
 ## License
 
 This software is released under the either of [MIT License](LICENSE-MIT) or
