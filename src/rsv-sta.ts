@@ -1,4 +1,6 @@
-import { devLog, hhmm2date, relURL } from "./utils";
+import { logger } from "./logger";
+import { settings } from "./settings";
+import { hhmm2date, relURL } from "./utils";
 
 // 图书馆预约状态
 export interface RsvSta {
@@ -67,20 +69,15 @@ export class RsvChecker {
    * @param openSpan 图书馆营业时段
    * @param minMinutes 至少持续时间
    */
-  constructor(
-    date: string,
-    rsvSpan: [string, string],
-    openSpan: [string, string],
-    minMinutes: number
-  ) {
+  constructor(date: string, rsvSpan: [string, string], minMinutes: number) {
     this.date = date;
     // 分钟转毫秒
     this.minMs = minMinutes * 60 * 1000;
     // 预约时段应该在营业时段之内
     const rsvStart = hhmm2date(date, rsvSpan[0]);
     const rsvEnd = hhmm2date(date, rsvSpan[1]);
-    const openStart = hhmm2date(date, openSpan[0]);
-    const openEnd = hhmm2date(date, openSpan[1]);
+    const openStart = hhmm2date(date, settings.openStart);
+    const openEnd = hhmm2date(date, settings.openEnd);
     this.start = rsvStart > openStart ? rsvStart : openStart;
     this.end = rsvEnd < openEnd ? rsvEnd : openEnd;
   }
@@ -133,7 +130,7 @@ export async function fetchRsvSta(
   openSpan: [string, string],
   date: string,
   roomId: string
-): Promise<RsvSta> {
+): Promise<RsvStaData[] | null> {
   const url = relURL(
     "/ClientWeb/pro/ajax/device.aspx",
     // 设定参数
@@ -153,8 +150,15 @@ export async function fetchRsvSta(
       // _: "xxx",
     }
   );
-  devLog(`请求预约信息：${url}`);
-  return await fetch(url).then((t) => t.json());
+  logger.info("请求预约信息…");
+  const rsvSta = await fetch(url).then((t) => t.json());
+  if (rsvSta.ret !== 1) {
+    logger.err(`请求失败：${rsvSta.msg}`);
+    return null;
+  } else {
+    logger.ok("请求成功！");
+    return rsvSta.data;
+  }
 }
 
 interface SetRsv {
@@ -180,7 +184,7 @@ export async function fetchSetRsv(
   date: string,
   start: string,
   end: string
-): Promise<SetRsv> {
+): Promise<boolean> {
   const url = relURL("/ClientWeb/pro/ajax/reserve.aspx", {
     dialogid: "",
     dev_id: devId,
@@ -203,6 +207,13 @@ export async function fetchSetRsv(
     act: "set_resv",
     // _:
   });
-  devLog(`发起预约请求：${url}`);
-  return await fetch(url).then((t) => t.json());
+  logger.info("发起预约请求…");
+  const setRsv: SetRsv = await fetch(url).then((t) => t.json());
+  if (setRsv.ret !== 1) {
+    logger.err(`请求失败：${setRsv.msg}`);
+    return false;
+  } else {
+    logger.ok("请求成功！");
+    return true;
+  }
 }

@@ -1566,6 +1566,32 @@ ${html}. Is your HTML properly formed?`;
     GM_setValue(key, val);
     setState(key, val);
   }
+  class Logger {
+    constructor() {
+      __publicField(this, "subscribers", []);
+    }
+    subscribe(f) {
+      const id = this.subscribers.length;
+      this.subscribers.push(f);
+      return () => this.subscribers[id] = () => void 0;
+    }
+    send(log) {
+      for (const sub of this.subscribers) {
+        sub(log);
+      }
+    }
+    info(msg) {
+      this.send({ type: "INFO", msg });
+    }
+    ok(msg) {
+      this.send({ type: "OK", msg });
+    }
+    err(msg) {
+      this.send({ type: "ERR", msg });
+    }
+  }
+  const logger = new Logger();
+  logger.subscribe((log) => devLog(log.msg));
   function getSpareTime(spare, busy) {
     if (busy[0] <= spare[0]) {
       if (busy[1] <= spare[0]) {
@@ -1589,7 +1615,7 @@ ${html}. Is your HTML properly formed?`;
     }
   }
   class RsvChecker {
-    constructor(date, rsvSpan, openSpan, minMinutes) {
+    constructor(date, rsvSpan, minMinutes) {
       __publicField(this, "date");
       __publicField(this, "start");
       __publicField(this, "end");
@@ -1598,8 +1624,8 @@ ${html}. Is your HTML properly formed?`;
       this.minMs = minMinutes * 60 * 1e3;
       const rsvStart = hhmm2date(date, rsvSpan[0]);
       const rsvEnd = hhmm2date(date, rsvSpan[1]);
-      const openStart = hhmm2date(date, openSpan[0]);
-      const openEnd = hhmm2date(date, openSpan[1]);
+      const openStart = hhmm2date(date, settings.openStart);
+      const openEnd = hhmm2date(date, settings.openEnd);
       this.start = rsvStart > openStart ? rsvStart : openStart;
       this.end = rsvEnd < openEnd ? rsvEnd : openEnd;
     }
@@ -1642,8 +1668,15 @@ ${html}. Is your HTML properly formed?`;
         act: "get_rsv_sta"
       }
     );
-    devLog(`\u8BF7\u6C42\u9884\u7EA6\u4FE1\u606F\uFF1A${url}`);
-    return await fetch(url).then((t) => t.json());
+    logger.info("\u8BF7\u6C42\u9884\u7EA6\u4FE1\u606F\u2026");
+    const rsvSta = await fetch(url).then((t) => t.json());
+    if (rsvSta.ret !== 1) {
+      logger.err(`\u8BF7\u6C42\u5931\u8D25\uFF1A${rsvSta.msg}`);
+      return null;
+    } else {
+      logger.ok("\u8BF7\u6C42\u6210\u529F\uFF01");
+      return rsvSta.data;
+    }
   }
   async function fetchSetRsv(devId, date, start, end) {
     const url = relURL("/ClientWeb/pro/ajax/reserve.aspx", {
@@ -1667,8 +1700,15 @@ ${html}. Is your HTML properly formed?`;
       memo: "",
       act: "set_resv"
     });
-    devLog(`\u53D1\u8D77\u9884\u7EA6\u8BF7\u6C42\uFF1A${url}`);
-    return await fetch(url).then((t) => t.json());
+    logger.info("\u53D1\u8D77\u9884\u7EA6\u8BF7\u6C42\u2026");
+    const setRsv = await fetch(url).then((t) => t.json());
+    if (setRsv.ret !== 1) {
+      logger.err(`\u8BF7\u6C42\u5931\u8D25\uFF1A${setRsv.msg}`);
+      return false;
+    } else {
+      logger.ok("\u8BF7\u6C42\u6210\u529F\uFF01");
+      return true;
+    }
   }
   const _tmpl$$1 = /* @__PURE__ */ template(`<span><input><datalist></datalist><button type="button">\u2796</button><button type="button">\u2795</button></span>`, 9), _tmpl$2$1 = /* @__PURE__ */ template(`<option></option>`, 2);
   function DataList(props) {
@@ -1705,33 +1745,7 @@ ${html}. Is your HTML properly formed?`;
       return _el$;
     })();
   }
-  class Logger {
-    constructor() {
-      __publicField(this, "subscribers", []);
-    }
-    subscribe(f) {
-      const id = this.subscribers.length;
-      this.subscribers.push(f);
-      return () => this.subscribers[id] = () => void 0;
-    }
-    send(log) {
-      for (const sub of this.subscribers) {
-        sub(log);
-      }
-    }
-    info(msg) {
-      this.send({ type: "INFO", msg });
-    }
-    ok(msg) {
-      this.send({ type: "OK", msg });
-    }
-    err(msg) {
-      this.send({ type: "ERR", msg });
-    }
-  }
-  const logger = new Logger();
-  logger.subscribe((log) => devLog(log.msg));
-  const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label> </label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div><span>\u7B49\u5F85\u4E2D\uFF0C\u4E8E <!> \u540E\u5F00\u59CB\u6267\u884C</span></div>`, 5), _tmpl$5 = /* @__PURE__ */ template(`<div><i>*\u5173\u95ED\u7A97\u53E3\u4EE5\u53D6\u6D88\u9884\u7EA6</i></div>`, 4), _tmpl$6 = /* @__PURE__ */ template(`<div></div>`, 2);
+  const _tmpl$ = /* @__PURE__ */ template(`<input>`, 1), _tmpl$2 = /* @__PURE__ */ template(`<div><label> </label></div>`, 4), _tmpl$3 = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div><span>\u7B49\u5F85\u4E2D\uFF0C\u4E8E <!> \u540E\u5F00\u59CB\u6267\u884C</span></div>`, 5), _tmpl$5 = /* @__PURE__ */ template(`<div><div><i>*\u5173\u95ED\u7A97\u53E3\u4EE5\u53D6\u6D88</i></div></div>`, 6), _tmpl$6 = /* @__PURE__ */ template(`<div></div>`, 2);
   function tomorrow() {
     const date = new Date();
     date.setDate(date.getDate() + 1);
@@ -1980,11 +1994,29 @@ ${html}. Is your HTML properly formed?`;
     render(() => {
       const [stage, setStage] = createSignal(OccupyStage.Prepare);
       const [logs2, setLogs] = createSignal([]);
-      const [remain, setRemain] = createSignal(-1);
       const unsubscribe = logger.subscribe((log) => {
         setLogs((logs3) => logs3.concat(log));
       });
-      onCleanup(() => unsubscribe());
+      const [remain, setRemain] = createSignal(-1);
+      let timerCb = null;
+      const setTimer = (durMs, cb) => {
+        timerCb = cb;
+        setRemain(durMs);
+      };
+      const timer = setInterval(() => {
+        if (timerCb === null)
+          return;
+        setRemain(remain() - 10);
+        if (remain() <= 0) {
+          timerCb();
+          timerCb = null;
+        }
+      }, 10);
+      win.addEventListener("unload", () => clearInterval(timer));
+      onCleanup(() => {
+        unsubscribe();
+        clearInterval(timer);
+      });
       return (() => {
         const _el$8 = _tmpl$6.cloneNode(true);
         insert(_el$8, createComponent(Switch, {
@@ -1997,23 +2029,14 @@ ${html}. Is your HTML properly formed?`;
                 return createComponent(Setting, {
                   onSubmit: (args) => {
                     const occupy = () => {
-                      performOccupation(roomId, args);
+                      performOccupation(roomId, args, setTimer);
                     };
                     setStage(OccupyStage.Perform);
                     if (args.eagerly) {
                       occupy();
                     } else {
-                      const startTime = hhmm2date(new Date().toLocaleDateString(), settings.tryStart);
-                      const timer = setInterval(() => {
-                        setRemain(startTime.getTime() - Date.now());
-                        if (remain() <= 0) {
-                          clearInterval(timer);
-                          occupy();
-                        }
-                      }, 100);
-                      win.addEventListener("unload", () => {
-                        clearInterval(timer);
-                      });
+                      const startTime = hhmm2date(new Date().toLocaleDateString(), settings.tryStart).getTime();
+                      setTimer(startTime - Date.now(), occupy);
                     }
                   }
                 });
@@ -2023,25 +2046,7 @@ ${html}. Is your HTML properly formed?`;
                 return stage() === OccupyStage.Perform;
               },
               get children() {
-                const _el$9 = _tmpl$6.cloneNode(true);
-                insert(_el$9, createComponent(Show, {
-                  get when() {
-                    return remain() > 0;
-                  },
-                  get children() {
-                    return [(() => {
-                      const _el$10 = _tmpl$4.cloneNode(true), _el$11 = _el$10.firstChild, _el$12 = _el$11.firstChild, _el$14 = _el$12.nextSibling;
-                      _el$14.nextSibling;
-                      insert(_el$11, () => date2mmss(new Date(remain())), _el$14);
-                      createRenderEffect(() => className(_el$10, style.logsTimer));
-                      return _el$10;
-                    })(), (() => {
-                      const _el$15 = _tmpl$5.cloneNode(true);
-                      createRenderEffect(() => className(_el$15, style.logsEntry));
-                      return _el$15;
-                    })()];
-                  }
-                }), null);
+                const _el$9 = _tmpl$5.cloneNode(true), _el$10 = _el$9.firstChild;
                 insert(_el$9, createComponent(Index, {
                   get each() {
                     return logs2();
@@ -2050,18 +2055,38 @@ ${html}. Is your HTML properly formed?`;
                     const _el$16 = _tmpl$6.cloneNode(true);
                     insert(_el$16, () => item().msg);
                     createRenderEffect((_p$) => {
-                      const _v$8 = style.logsEntry, _v$9 = item().type;
-                      _v$8 !== _p$._v$8 && className(_el$16, _p$._v$8 = _v$8);
-                      _v$9 !== _p$._v$9 && setAttribute(_el$16, "data-type", _p$._v$9 = _v$9);
+                      const _v$10 = style.logsEntry, _v$11 = item().type;
+                      _v$10 !== _p$._v$10 && className(_el$16, _p$._v$10 = _v$10);
+                      _v$11 !== _p$._v$11 && setAttribute(_el$16, "data-type", _p$._v$11 = _v$11);
                       return _p$;
                     }, {
-                      _v$8: void 0,
-                      _v$9: void 0
+                      _v$10: void 0,
+                      _v$11: void 0
                     });
                     return _el$16;
                   })()
                 }), null);
-                createRenderEffect(() => className(_el$9, style.logs));
+                insert(_el$9, createComponent(Show, {
+                  get when() {
+                    return remain() > 0;
+                  },
+                  get children() {
+                    const _el$11 = _tmpl$4.cloneNode(true), _el$12 = _el$11.firstChild, _el$13 = _el$12.firstChild, _el$15 = _el$13.nextSibling;
+                    _el$15.nextSibling;
+                    insert(_el$12, () => date2mmss(new Date(remain())), _el$15);
+                    createRenderEffect(() => className(_el$11, style.logsTimer));
+                    return _el$11;
+                  }
+                }), null);
+                createRenderEffect((_p$) => {
+                  const _v$8 = style.logs, _v$9 = style.logsEntry;
+                  _v$8 !== _p$._v$8 && className(_el$9, _p$._v$8 = _v$8);
+                  _v$9 !== _p$._v$9 && className(_el$10, _p$._v$9 = _v$9);
+                  return _p$;
+                }, {
+                  _v$8: void 0,
+                  _v$9: void 0
+                });
                 return _el$9;
               }
             })];
@@ -2077,60 +2102,78 @@ ${html}. Is your HTML properly formed?`;
     rsvAm,
     rsvPm,
     _postReq
-  }) {
-    logger.info("\u8BF7\u6C42\u9884\u7EA6\u4FE1\u606F\u2026");
-    const rsvSta = await fetchRsvSta([settings.openStart, settings.openEnd], rsvDate, roomId);
-    if (rsvSta.ret !== 1) {
-      logger.err(`\u8BF7\u6C42\u5931\u8D25\uFF1A${rsvSta.msg}`);
-      return;
-    } else {
-      logger.ok("\u8BF7\u6C42\u6210\u529F\uFF01");
-    }
-    if (settings.random) {
-      const offset = Math.random() * rsvSta.data.length;
-      rsvSta.data = rsvSta.data.slice(offset).concat(rsvSta.data.slice(0, offset));
-    }
-    const marked = settings.marked;
-    if (marked.length > 0) {
-      const newData = [];
-      for (const data of rsvSta.data) {
-        if (marked.includes(data.devName)) {
-          newData.unshift(data);
-        } else {
-          newData.push(data);
-        }
+  }, setTimer) {
+    async function fetchAndReorder() {
+      let rsvSta2 = await fetchRsvSta([settings.openStart, settings.openEnd], rsvDate, roomId);
+      if (rsvSta2 === null)
+        return null;
+      if (settings.random) {
+        const offset = Math.random() * rsvSta2.length;
+        rsvSta2 = rsvSta2.slice(offset).concat(rsvSta2.slice(0, offset));
       }
-      rsvSta.data = newData;
+      const marked = settings.marked;
+      if (marked.length > 0) {
+        const newData = [];
+        for (const data of rsvSta2) {
+          if (marked.includes(data.devName)) {
+            newData.unshift(data);
+          } else {
+            newData.push(data);
+          }
+        }
+        rsvSta2 = newData;
+      }
+      return rsvSta2;
     }
-    const occupy = async (start, end, minMinutes) => {
+    async function findAndRsv(rsvSta2, start, end, minMinutes) {
+      const checker = new RsvChecker(rsvDate, [start, end], minMinutes);
       logger.info("\u5BFB\u627E\u7A7A\u5EA7\u2026");
-      const checker = new RsvChecker(rsvDate, [start, end], [settings.openStart, settings.openEnd], minMinutes);
-      for (const data of rsvSta.data) {
+      for (const data of rsvSta2) {
         const spare = checker.check(data);
         if (spare != null) {
           logger.ok(`\u627E\u5230\u7A7A\u5EA7\uFF1A${data.devName}\uFF0C${date2hhmm(spare[0])}-${date2hhmm(spare[1])}`);
           if (_postReq) {
-            logger.info("\u53D1\u8D77\u9884\u7EA6\u8BF7\u6C42\u2026");
-            const setRsv = await fetchSetRsv(data.devId, rsvDate, start, end);
-            if (setRsv.ret !== 1) {
-              logger.err(`\u8BF7\u6C42\u5931\u8D25\uFF1A${setRsv.msg}`);
-            } else {
-              logger.ok("\u8BF7\u6C42\u6210\u529F\uFF01");
-            }
+            return await fetchSetRsv(data.devId, rsvDate, start, end);
           }
-          return;
+          return true;
         }
       }
       logger.err("\u672A\u627E\u5230\u7A7A\u5EA7\uFF01");
+      return false;
+    }
+    let rsvSta = null;
+    let tryCount = 0;
+    const {
+      tryMax,
+      tryInterval,
+      amStart,
+      amEnd,
+      amMinMinutes,
+      pmStart,
+      pmEnd,
+      pmMinMinutes
+    } = settings;
+    const cb = async () => {
+      if (++tryCount > tryMax || !rsvPm && !rsvAm)
+        return;
+      logger.info(`\u7B2C ${tryCount}/${tryMax} \u6B21\u5C1D\u8BD5\u2026`);
+      rsvSta = await fetchAndReorder();
+      if (rsvSta === null)
+        return;
+      if (rsvAm) {
+        logger.info("\u9884\u7EA6\u4E0A\u5348\u2026");
+        rsvAm = !await findAndRsv(rsvSta, amStart, amEnd, amMinMinutes);
+      }
+      if (rsvPm) {
+        logger.info("\u9884\u7EA6\u4E0B\u5348\u2026");
+        rsvPm = !await findAndRsv(rsvSta, pmStart, pmEnd, pmMinMinutes);
+      }
+      if (tryCount < tryMax && (rsvPm || rsvAm))
+        setTimer(tryInterval * 1e3, () => cb());
+      else
+        logger.info("\u6267\u884C\u7ED3\u675F\uFF01");
     };
-    if (rsvAm) {
-      logger.info("\u9884\u7EA6\u4E0A\u5348\u2026");
-      await occupy(settings.amStart, settings.amEnd, settings.amMinMinutes);
-    }
-    if (rsvPm) {
-      logger.info("\u9884\u7EA6\u4E0B\u5348\u2026");
-      await occupy(settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
-    }
+    await cb();
   }
   function main() {
     injectStyle(document);

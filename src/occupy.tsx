@@ -20,7 +20,7 @@ import {
   Show,
   Switch,
 } from "solid-js";
-import { RsvChecker, fetchRsvSta, fetchSetRsv } from "./rsv-sta";
+import { RsvChecker, fetchRsvSta, fetchSetRsv, RsvStaData } from "./rsv-sta";
 import { createStore } from "solid-js/store";
 import { DataList } from "./datalist";
 import { Log, logger } from "./logger";
@@ -216,14 +216,34 @@ export function prepareOccupation(roomId: string) {
   injectStyle(win.document);
   render(() => {
     const [stage, setStage] = createSignal<OccupyStage>(OccupyStage.Prepare);
-    const [logs, setLogs] = createSignal<Log[]>([]);
-    const [remain, setRemain] = createSignal<number>(-1);
 
+    // 日志
+    const [logs, setLogs] = createSignal<Log[]>([]);
     const unsubscribe = logger.subscribe((log) => {
       setLogs((logs) => logs.concat(log));
     });
 
-    onCleanup(() => unsubscribe());
+    // 计时器
+    const [remain, setRemain] = createSignal<number>(-1);
+    let timerCb: (() => void) | null = null;
+    const setTimer = (durMs: number, cb: () => void) => {
+      timerCb = cb;
+      setRemain(durMs);
+    };
+    const timer = setInterval(() => {
+      if (timerCb === null) return;
+      setRemain(remain() - 10);
+      if (remain() <= 0) {
+        timerCb();
+        timerCb = null;
+      }
+    }, 10);
+    win.addEventListener("unload", () => clearInterval(timer));
+
+    onCleanup(() => {
+      unsubscribe();
+      clearInterval(timer);
+    });
 
     return (
       <div>
@@ -232,7 +252,7 @@ export function prepareOccupation(roomId: string) {
             <Setting
               onSubmit={(args) => {
                 const occupy = () => {
-                  performOccupation(roomId, args);
+                  performOccupation(roomId, args, setTimer);
                 };
 
                 setStage(OccupyStage.Perform);
@@ -243,34 +263,17 @@ export function prepareOccupation(roomId: string) {
                   const startTime = hhmm2date(
                     new Date().toLocaleDateString(),
                     settings.tryStart
-                  );
-                  const timer = setInterval(() => {
-                    setRemain(startTime.getTime() - Date.now());
-                    if (remain() <= 0) {
-                      clearInterval(timer);
-                      occupy();
-                    }
-                  }, 100);
-                  // 关闭窗口时取消执行
-                  win.addEventListener("unload", () => {
-                    clearInterval(timer);
-                  });
+                  ).getTime();
+                  setTimer(startTime - Date.now(), occupy);
                 }
               }}
             />
           </Match>
           <Match when={stage() === OccupyStage.Perform}>
             <div class={style.logs}>
-              <Show when={remain() > 0}>
-                <div class={style.logsTimer}>
-                  <span>
-                    等待中，于 {date2mmss(new Date(remain()))} 后开始执行
-                  </span>
-                </div>
-                <div class={style.logsEntry}>
-                  <i>*关闭窗口以取消预约</i>
-                </div>
-              </Show>
+              <div class={style.logsEntry}>
+                <i>*关闭窗口以取消</i>
+              </div>
               <Index each={logs()}>
                 {(item) => (
                   <div class={style.logsEntry} data-type={item().type}>
@@ -278,6 +281,13 @@ export function prepareOccupation(roomId: string) {
                   </div>
                 )}
               </Index>
+              <Show when={remain() > 0}>
+                <div class={style.logsTimer}>
+                  <span>
+                    等待中，于 {date2mmss(new Date(remain()))} 后开始执行
+                  </span>
+                </div>
+              </Show>
             </div>
           </Match>
         </Switch>
@@ -292,57 +302,49 @@ export function prepareOccupation(roomId: string) {
  */
 async function performOccupation(
   roomId: string,
-  { rsvDate, rsvAm, rsvPm, _postReq }: Args
+  { rsvDate, rsvAm, rsvPm, _postReq }: Args,
+  setTimer: (durMs: number, cb: () => void) => void
 ) {
-  logger.info("请求预约信息…");
-  const rsvSta = await fetchRsvSta(
-    [settings.openStart, settings.openEnd],
-    rsvDate,
-    roomId
-  );
+  async function fetchAndReorder(): Promise<RsvStaData[] | null> {
+    let rsvSta = await fetchRsvSta(
+      [settings.openStart, settings.openEnd],
+      rsvDate,
+      roomId
+    );
 
-  if (rsvSta.ret !== 1) {
-    logger.err(`请求失败：${rsvSta.msg}`);
-    return;
-  } else {
-    logger.ok("请求成功！");
-  }
+    if (rsvSta === null) return null;
 
-  if (settings.random) {
-    // 将预约数据随意旋转一个偏移量
-    const offset = Math.random() * rsvSta.data.length;
-    rsvSta.data = rsvSta.data
-      .slice(offset)
-      .concat(rsvSta.data.slice(0, offset));
-  }
-
-  const marked = settings.marked;
-  if (marked.length > 0) {
-    // 将优先预约的座位移动到最前面
-    const newData = [];
-    for (const data of rsvSta.data) {
-      if (marked.includes(data.devName)) {
-        newData.unshift(data);
-      } else {
-        newData.push(data);
-      }
+    if (settings.random) {
+      // 将预约数据随意旋转一个偏移量
+      const offset = Math.random() * rsvSta.length;
+      rsvSta = rsvSta.slice(offset).concat(rsvSta.slice(0, offset));
     }
-    rsvSta.data = newData;
+
+    const marked = settings.marked;
+    if (marked.length > 0) {
+      // 将优先预约的座位移动到最前面
+      const newData = [];
+      for (const data of rsvSta) {
+        if (marked.includes(data.devName)) {
+          newData.unshift(data);
+        } else {
+          newData.push(data);
+        }
+      }
+      rsvSta = newData;
+    }
+    return rsvSta;
   }
 
-  const occupy = async (
+  async function findAndRsv(
+    rsvSta: RsvStaData[],
     start: string,
     end: string,
     minMinutes: number
-  ): Promise<void> => {
+  ): Promise<boolean> {
+    const checker = new RsvChecker(rsvDate, [start, end], minMinutes);
     logger.info("寻找空座…");
-    const checker = new RsvChecker(
-      rsvDate,
-      [start, end],
-      [settings.openStart, settings.openEnd],
-      minMinutes
-    );
-    for (const data of rsvSta.data) {
+    for (const data of rsvSta) {
       const spare = checker.check(data);
       if (spare != null) {
         logger.ok(
@@ -351,26 +353,47 @@ async function performOccupation(
           )}`
         );
         if (!__DEV_MODE || _postReq) {
-          logger.info("发起预约请求…");
-          const setRsv = await fetchSetRsv(data.devId, rsvDate, start, end);
-          if (setRsv.ret !== 1) {
-            logger.err(`请求失败：${setRsv.msg}`);
-          } else {
-            logger.ok("请求成功！");
-          }
+          return await fetchSetRsv(data.devId, rsvDate, start, end);
         }
-        return;
+        return true;
       }
     }
     logger.err("未找到空座！");
+    return false;
+  }
+
+  let rsvSta: RsvStaData[] | null = null;
+  let tryCount = 0;
+  const {
+    tryMax,
+    tryInterval,
+    amStart,
+    amEnd,
+    amMinMinutes,
+    pmStart,
+    pmEnd,
+    pmMinMinutes,
+  } = settings;
+
+  const cb = async () => {
+    if (++tryCount > tryMax || (!rsvPm && !rsvAm)) return;
+    logger.info(`第 ${tryCount}/${tryMax} 次尝试…`);
+    rsvSta = await fetchAndReorder();
+    if (rsvSta === null) return;
+
+    if (rsvAm) {
+      logger.info("预约上午…");
+      rsvAm = !(await findAndRsv(rsvSta, amStart, amEnd, amMinMinutes));
+    }
+    if (rsvPm) {
+      logger.info("预约下午…");
+      rsvPm = !(await findAndRsv(rsvSta, pmStart, pmEnd, pmMinMinutes));
+    }
+
+    if (tryCount < tryMax && (rsvPm || rsvAm))
+      setTimer(tryInterval * 1000, () => cb());
+    else logger.info("执行结束！");
   };
 
-  if (rsvAm) {
-    logger.info("预约上午…");
-    await occupy(settings.amStart, settings.amEnd, settings.amMinMinutes);
-  }
-  if (rsvPm) {
-    logger.info("预约下午…");
-    await occupy(settings.pmStart, settings.pmEnd, settings.pmMinMinutes);
-  }
+  await cb();
 }
