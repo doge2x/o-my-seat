@@ -41,6 +41,18 @@ export function assertNonNullable<T>(v: T, msg?: string): NonNullable<T> {
   return v;
 }
 
+export function uniqueId(prefix: string, length = 8) {
+  return (
+    prefix +
+    parseInt(
+      Math.ceil(Math.random() * Date.now())
+        .toPrecision(length)
+        .toString()
+        .replace(".", "")
+    )
+  );
+}
+
 export function devLog(msg: string) {
   if (__DEV_MODE) {
     console.log(msg);
