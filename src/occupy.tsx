@@ -10,19 +10,10 @@ import {
   unsafeCast,
 } from "./utils";
 import style from "./style.module.less";
-import {
-  createMemo,
-  createSignal,
-  Index,
-  JSX,
-  Match,
-  onCleanup,
-  Show,
-  Switch,
-} from "solid-js";
+import { createSignal, Index, Match, onCleanup, Show, Switch } from "solid-js";
 import { RsvChecker, fetchRsvSta, fetchSetRsv, RsvStaData } from "./rsv-sta";
 import { createStore } from "solid-js/store";
-import { DataList } from "./datalist";
+import { Entry, InputTypeMap } from "./entry";
 import { Log, logger } from "./logger";
 
 function tomorrow(): string {
@@ -37,77 +28,6 @@ interface Args {
   rsvAm: boolean;
   rsvPm: boolean;
   _postReq: boolean; // DEV ONLY
-}
-
-interface InputTypeMap {
-  date: string;
-  time: string;
-  text: string;
-  checkbox: boolean;
-  number: number;
-  datalist: string[];
-}
-
-/**
- * 一般参数项
- */
-function Entry<K extends keyof InputTypeMap>(props: {
-  name: string;
-  label: string;
-  type: K;
-  value: InputTypeMap[K];
-  onChange: (val: InputTypeMap[K]) => void;
-}) {
-  const id = createMemo(() => `input-${Date.now()}`);
-  const Input2 = (props2: JSX.InputHTMLAttributes<HTMLInputElement>) => (
-    <input id={id()} type={props.type} {...props2} />
-  );
-  return (
-    <div class={style.settingsEntry}>
-      <label for={id()} textContent={props.label} />
-      <Switch>
-        <Match
-          when={
-            props.type === "date" ||
-            props.type === "time" ||
-            props.type === "text"
-          }
-        >
-          <Input2
-            required
-            value={unsafeCast(props.value)}
-            onChange={(ev) =>
-              props.onChange(unsafeCast(ev.currentTarget.value))
-            }
-          />
-        </Match>
-        <Match when={props.type === "number"}>
-          <Input2
-            required
-            value={unsafeCast(props.value)}
-            onChange={(ev) =>
-              props.onChange(unsafeCast(parseInt(ev.currentTarget.value)))
-            }
-          />
-        </Match>
-        <Match when={props.type === "checkbox"}>
-          <Input2
-            checked={unsafeCast(props.value)}
-            onChange={(ev) =>
-              props.onChange(unsafeCast(ev.currentTarget.checked))
-            }
-          />
-        </Match>
-        <Match when={props.type === "datalist"}>
-          <DataList
-            id={id()}
-            value={unsafeCast(props.value)}
-            onChange={(v) => setSetting("marked", v)}
-          />
-        </Match>
-      </Switch>
-    </div>
-  );
 }
 
 /**
