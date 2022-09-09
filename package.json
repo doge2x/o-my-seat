@@ -1,6 +1,6 @@
 {
   "name": "o-my-seat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "doge2x",
   "main": "src/main.ts",
   "license": "MIT OR Apache-2.0",
