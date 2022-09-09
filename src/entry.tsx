@@ -1,5 +1,4 @@
 import { Match, Switch, createSignal, For, JSX } from "solid-js";
-import { setSetting } from "./settings";
 import style from "./style.module.less";
 import { uniqueId, unsafeCast } from "./utils";
 
@@ -114,7 +113,7 @@ export function Entry<K extends keyof InputTypeMap>(props: {
           <DataList
             id={id}
             value={unsafeCast(props.value)}
-            onChange={(v) => setSetting("marked", v)}
+            onChange={(v) => props.onChange(unsafeCast(v))}
           />
         </Match>
       </Switch>

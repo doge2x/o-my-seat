@@ -1812,7 +1812,7 @@ ${html}. Is your HTML properly formed?`;
                 get value() {
                   return unsafeCast(props.value);
                 },
-                onChange: (v) => setSetting("marked", v)
+                onChange: (v) => props.onChange(unsafeCast(v))
               });
             }
           })];
