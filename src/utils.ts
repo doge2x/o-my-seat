@@ -71,17 +71,11 @@ export function classList(...list: (string | undefined)[]): {
   return obj;
 }
 
-export function openWin(opts: {
-  title: string;
-  width: number;
-  height: number;
-  left?: number;
-  top?: number;
-}): Window {
+export function openWin(title: string, opts: { [k: string]: string }): Window {
   const win = assertNonNullable(
     window.open(
       "",
-      "",
+      "_blank",
       Object.entries(opts)
         .map(([k, v]) => `${k}=${v}`)
         .join(",")
@@ -89,8 +83,8 @@ export function openWin(opts: {
     "cannot open windows"
   );
   window.addEventListener("unload", () => win.close());
-  const title = win.document.createElement("title");
-  title.textContent = opts.title;
+  const titleEle = win.document.createElement("title");
+  titleEle.textContent = opts.title;
   win.document.head.append(title);
   return win;
 }

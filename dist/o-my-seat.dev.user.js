@@ -1240,29 +1240,31 @@ ${html}. Is your HTML properly formed?`;
       console.log(msg);
     }
   }
-  function openWin(opts) {
+  function openWin(title, opts) {
     const win = assertNonNullable(
       window.open(
         "",
-        "",
+        "_blank",
         Object.entries(opts).map(([k, v]) => `${k}=${v}`).join(",")
       ),
       "cannot open windows"
     );
     window.addEventListener("unload", () => win.close());
-    const title = win.document.createElement("title");
-    title.textContent = opts.title;
+    const titleEle = win.document.createElement("title");
+    titleEle.textContent = opts.title;
     win.document.head.append(title);
     return win;
   }
-  const startButton = "_startButton_scxi1_1";
-  const settings$1 = "_settings_scxi1_7";
-  const logs = "_logs_scxi1_8";
-  const settingsEntry = "_settingsEntry_scxi1_16";
-  const settingsSubmit = "_settingsSubmit_scxi1_21";
-  const datalist = "_datalist_scxi1_33";
-  const logsEntry = "_logsEntry_scxi1_41";
-  const logsTimer = "_logsTimer_scxi1_42";
+  const startButton = "_startButton_ali4t_1";
+  const settings$1 = "_settings_ali4t_7";
+  const logs = "_logs_ali4t_8";
+  const settingsEntry = "_settingsEntry_ali4t_16";
+  const settingsSubmit = "_settingsSubmit_ali4t_21";
+  const datalist = "_datalist_ali4t_33";
+  const logsEntry = "_logsEntry_ali4t_41";
+  const logsTimer = "_logsTimer_ali4t_42";
+  const dropdown = "_dropdown_ali4t_68";
+  const dropdownEntry = "_dropdownEntry_ali4t_76";
   const style = {
     startButton,
     settings: settings$1,
@@ -1271,9 +1273,11 @@ ${html}. Is your HTML properly formed?`;
     settingsSubmit,
     datalist,
     logsEntry,
-    logsTimer
+    logsTimer,
+    dropdown,
+    dropdownEntry
   };
-  const styleCss = '._startButton_scxi1_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_scxi1_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_scxi1_7,\n._logs_scxi1_8 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 16rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_scxi1_16 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.3rem;\n}\n._settingsSubmit_scxi1_21 {\n  display: flex;\n  justify-content: end;\n}\n._settings_scxi1_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_scxi1_7 button,\n._settings_scxi1_7 input {\n  font-size: 0.7rem;\n}\n._settings_scxi1_7 ._datalist_scxi1_33,\n._settings_scxi1_7 input {\n  width: 7rem;\n  text-align: left;\n}\n._settings_scxi1_7 input[type="checkbox"] {\n  width: auto;\n}\n._logsEntry_scxi1_41,\n._logsTimer_scxi1_42 {\n  margin-bottom: 0.5rem;\n}\n._logsTimer_scxi1_42 {\n  color: blue;\n}\n._logsEntry_scxi1_41[data-type="OK"] {\n  color: green;\n}\n._logsEntry_scxi1_41[data-type="ERR"] {\n  color: red;\n}\n._logsEntry_scxi1_41[data-type="INFO"] {\n  color: gray;\n}\n._datalist_scxi1_33 {\n  display: flex;\n  align-content: center;\n}\n._datalist_scxi1_33 button {\n  font-size: 0.3rem;\n  padding: 0 0.15rem;\n}\n._datalist_scxi1_33 input {\n  width: 100%;\n}\n';
+  const styleCss = '._startButton_ali4t_1::after {\n  content: "\u{1F3C1}";\n}\n._startButton_ali4t_1:hover::after {\n  content: "\u{1F6A9}";\n}\n._settings_ali4t_7,\n._logs_ali4t_8 {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  width: 16rem;\n  font-size: 0.75rem;\n  margin: auto;\n}\n._settingsEntry_ali4t_16 {\n  display: flex;\n  justify-content: space-between;\n  margin-bottom: 0.3rem;\n}\n._settingsSubmit_ali4t_21 {\n  display: flex;\n  justify-content: end;\n}\n._settings_ali4t_7 label {\n  display: flex;\n  align-items: center;\n}\n._settings_ali4t_7 button,\n._settings_ali4t_7 input {\n  font-size: 0.7rem;\n}\n._settings_ali4t_7 ._datalist_ali4t_33,\n._settings_ali4t_7 input {\n  width: 7rem;\n  text-align: left;\n}\n._settings_ali4t_7 input[type="checkbox"] {\n  width: auto;\n}\n._logsEntry_ali4t_41,\n._logsTimer_ali4t_42 {\n  margin-bottom: 0.5rem;\n}\n._logsTimer_ali4t_42 {\n  color: blue;\n}\n._logsEntry_ali4t_41[data-type="OK"] {\n  color: green;\n}\n._logsEntry_ali4t_41[data-type="ERR"] {\n  color: red;\n}\n._logsEntry_ali4t_41[data-type="INFO"] {\n  color: gray;\n}\n._datalist_ali4t_33 {\n  display: flex;\n  align-content: center;\n}\n._datalist_ali4t_33 button {\n  font-size: 0.3rem;\n  padding: 0 0.15rem;\n}\n._datalist_ali4t_33 input {\n  width: 100%;\n}\n._dropdown_ali4t_68 {\n  position: absolute;\n  z-index: 1;\n  background-color: white;\n  box-shadow: 0.2rem 0.2rem 1rem rgba(0, 0, 0, 0.2);\n  min-width: 7rem;\n  font-size: 0.7rem;\n}\n._dropdownEntry_ali4t_76 {\n  padding: 0.5rem 0.25rem;\n}\n._dropdownEntry_ali4t_76:hover {\n  background-color: rgba(0, 0, 0, 0.2);\n  cursor: pointer;\n}\n';
   const _tmpl$$2 = /* @__PURE__ */ template(`<span></span>`, 2);
   function injectStyle(doc) {
     const css = doc.createElement("style");
@@ -1715,54 +1719,81 @@ ${html}. Is your HTML properly formed?`;
       return true;
     }
   }
-  const _tmpl$$1 = /* @__PURE__ */ template(`<span><input type="text"><datalist></datalist><button type="button">\u2796</button><button type="button">\u2795</button></span>`, 9), _tmpl$2$1 = /* @__PURE__ */ template(`<option></option>`, 2), _tmpl$3$1 = /* @__PURE__ */ template(`<input>`, 1), _tmpl$4$1 = /* @__PURE__ */ template(`<div><label> </label></div>`, 4);
+  const _tmpl$$1 = /* @__PURE__ */ template(`<div></div>`, 2), _tmpl$2$1 = /* @__PURE__ */ template(`<span><span><input type="text"></span><button type="button">\u2796</button><button type="button">\u2795</button></span>`, 9), _tmpl$3$1 = /* @__PURE__ */ template(`<input>`, 1), _tmpl$4$1 = /* @__PURE__ */ template(`<div><label> </label></div>`, 4);
   function DataList(props) {
     const id = uniqueId("datalist-");
     const [current, setCurrent] = createSignal("");
-    const [_, setData] = createSignal(props.value);
+    const [, setData] = createSignal(props.value);
+    const [showDropdown, setShowDropdown] = createSignal(false);
+    window.addEventListener("click", () => setShowDropdown(false));
     return (() => {
-      const _el$ = _tmpl$$1.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling, _el$4 = _el$3.nextSibling, _el$5 = _el$4.nextSibling;
-      _el$2.addEventListener("change", (ev) => setCurrent(ev.currentTarget.value.trim()));
-      setAttribute(_el$2, "list", id);
-      setAttribute(_el$3, "id", id);
-      insert(_el$3, createComponent(For, {
-        get each() {
-          return props.value;
+      const _el$ = _tmpl$2$1.cloneNode(true), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$5 = _el$2.nextSibling, _el$6 = _el$5.nextSibling;
+      _el$3.addEventListener("blur", () => setShowDropdown(false));
+      _el$3.addEventListener("focus", () => setShowDropdown(true));
+      _el$3.addEventListener("input", (ev) => setCurrent(ev.currentTarget.value.trim()));
+      setAttribute(_el$3, "list", id);
+      insert(_el$2, createComponent(Show, {
+        get when() {
+          return showDropdown();
         },
-        children: (item) => (() => {
-          const _el$6 = _tmpl$2$1.cloneNode(true);
-          _el$6.value = item;
-          return _el$6;
-        })()
-      }));
-      _el$4.addEventListener("click", () => props.onChange(setData((data) => data.filter((v) => v !== current()))));
-      _el$5.addEventListener("click", () => current() === "" ? void 0 : props.onChange(setData((data) => data.includes(current()) ? Array.from(data) : data.concat(current()))));
+        get children() {
+          const _el$4 = _tmpl$$1.cloneNode(true);
+          insert(_el$4, createComponent(For, {
+            get each() {
+              return (() => {
+                const curr = current().toLowerCase();
+                return props.value.filter((s) => s.toLowerCase().startsWith(curr));
+              })();
+            },
+            children: (item) => (() => {
+              const _el$7 = _tmpl$$1.cloneNode(true);
+              _el$7.addEventListener("click", () => setCurrent(item));
+              _el$7.addEventListener("mousedown", (ev) => ev.preventDefault());
+              insert(_el$7, item);
+              createRenderEffect(() => className(_el$7, style.dropdownEntry));
+              return _el$7;
+            })()
+          }));
+          createRenderEffect(() => className(_el$4, style.dropdown));
+          return _el$4;
+        }
+      }), null);
+      _el$5.addEventListener("click", () => {
+        const curr = current();
+        props.onChange(setData((data) => data.filter((v) => v !== curr)));
+      });
+      _el$6.addEventListener("click", () => {
+        const curr = current();
+        if (curr === "")
+          return;
+        return props.onChange(setData((data) => data.includes(curr) ? Array.from(data) : data.concat(curr)));
+      });
       createRenderEffect((_p$) => {
         const _v$ = style.datalist, _v$2 = props.id;
         _v$ !== _p$._v$ && className(_el$, _p$._v$ = _v$);
-        _v$2 !== _p$._v$2 && setAttribute(_el$2, "id", _p$._v$2 = _v$2);
+        _v$2 !== _p$._v$2 && setAttribute(_el$3, "id", _p$._v$2 = _v$2);
         return _p$;
       }, {
         _v$: void 0,
         _v$2: void 0
       });
-      createRenderEffect(() => _el$2.value = current());
+      createRenderEffect(() => _el$3.value = current());
       return _el$;
     })();
   }
   function Entry(props) {
     const id = uniqueId("input-");
     const Input2 = (props2) => (() => {
-      const _el$7 = _tmpl$3$1.cloneNode(true);
-      setAttribute(_el$7, "id", id);
-      spread(_el$7, props2, false, false);
-      createRenderEffect(() => setAttribute(_el$7, "type", props.type));
-      return _el$7;
+      const _el$8 = _tmpl$3$1.cloneNode(true);
+      setAttribute(_el$8, "id", id);
+      spread(_el$8, props2, false, false);
+      createRenderEffect(() => setAttribute(_el$8, "type", props.type));
+      return _el$8;
     })();
     return (() => {
-      const _el$8 = _tmpl$4$1.cloneNode(true), _el$9 = _el$8.firstChild, _el$10 = _el$9.firstChild;
-      setAttribute(_el$9, "for", id);
-      insert(_el$8, createComponent(Switch, {
+      const _el$9 = _tmpl$4$1.cloneNode(true), _el$10 = _el$9.firstChild, _el$11 = _el$10.firstChild;
+      setAttribute(_el$10, "for", id);
+      insert(_el$9, createComponent(Switch, {
         get children() {
           return [createComponent(Match, {
             get when() {
@@ -1820,14 +1851,14 @@ ${html}. Is your HTML properly formed?`;
       }), null);
       createRenderEffect((_p$) => {
         const _v$3 = style.settingsEntry, _v$4 = props.label;
-        _v$3 !== _p$._v$3 && className(_el$8, _p$._v$3 = _v$3);
-        _v$4 !== _p$._v$4 && (_el$10.data = _p$._v$4 = _v$4);
+        _v$3 !== _p$._v$3 && className(_el$9, _p$._v$3 = _v$3);
+        _v$4 !== _p$._v$4 && (_el$11.data = _p$._v$4 = _v$4);
         return _p$;
       }, {
         _v$3: void 0,
         _v$4: void 0
       });
-      return _el$8;
+      return _el$9;
     })();
   }
   const _tmpl$ = /* @__PURE__ */ template(`<form><div><button type="submit"></button></div></form>`, 6), _tmpl$2 = /* @__PURE__ */ template(`<div><span>\u7B49\u5F85\u4E2D\uFF0C\u4E8E <!> \u540E\u5F00\u59CB\u6267\u884C</span></div>`, 5), _tmpl$3 = /* @__PURE__ */ template(`<div><div><i>*\u5173\u95ED\u7A97\u53E3\u4EE5\u53D6\u6D88</i></div></div>`, 6), _tmpl$4 = /* @__PURE__ */ template(`<div></div>`, 2);
@@ -1975,10 +2006,9 @@ ${html}. Is your HTML properly formed?`;
     OccupyStage2["Perform"] = "PERFORM";
   })(OccupyStage || (OccupyStage = {}));
   function prepareOccupation(roomId) {
-    const win = openWin({
-      title: "O My Seat",
-      width: 300,
-      height: 500
+    const win = openWin("O My Seat", {
+      width: "300",
+      height: "500"
     });
     injectStyle(win.document);
     render(() => {
