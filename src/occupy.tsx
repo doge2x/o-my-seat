@@ -27,7 +27,7 @@ interface Args {
   eagerly: boolean;
   rsvAm: boolean;
   rsvPm: boolean;
-  _postReq: boolean; // DEV ONLY
+  postReq: boolean;
 }
 
 /**
@@ -57,7 +57,7 @@ function Setting(props: { onSubmit: (args: Args) => void }) {
     eagerly: false,
     rsvAm: true,
     rsvPm: true,
-    _postReq: false,
+    postReq: true,
   });
 
   /**
@@ -110,10 +110,8 @@ function Setting(props: { onSubmit: (args: Args) => void }) {
       <LocalEntry name="random" label="随机选座" type="checkbox" />
       <ArgsEntry name="rsvAm" label="预约上午" type="checkbox" />
       <ArgsEntry name="rsvPm" label="预约下午" type="checkbox" />
+      <ArgsEntry name="postReq" label="发起预约请求" type="checkbox" />
       <ArgsEntry name="eagerly" label="立即执行" type="checkbox" />
-      <Show when={__DEV_MODE}>
-        <ArgsEntry name="_postReq" label="[DEV]发起预约请求" type="checkbox" />
-      </Show>
       <div class={style.settingsSubmit}>
         <button type="submit" textContent={"执行"} />
       </div>
@@ -222,7 +220,7 @@ export function prepareOccupation(roomId: string) {
  */
 async function performOccupation(
   roomId: string,
-  { rsvDate, rsvAm, rsvPm, _postReq }: Args,
+  { rsvDate, rsvAm, rsvPm, postReq }: Args,
   setTimer: (durMs: number, cb: () => void) => void
 ) {
   async function fetchAndReorder(): Promise<RsvStaData[] | null> {
@@ -272,7 +270,7 @@ async function performOccupation(
             spare[1]
           )}`
         );
-        if (!__DEV_MODE || _postReq) {
+        if (postReq) {
           return await fetchSetRsv(data.devId, rsvDate, start, end);
         }
         return true;
