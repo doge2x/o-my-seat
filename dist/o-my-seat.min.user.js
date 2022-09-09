@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         o-my-seat
-// @version      0.1.0
+// @version      0.1.1
 // @author       doge2x
 // @namespace    https://github.com/doge2x/o-my-seat
 // @match        http://csyy.qdu.edu.cn:8080/clientweb/xcus/ic2/Default.aspx
