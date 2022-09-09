@@ -1,4 +1,4 @@
-import { Match, Switch, createSignal, For, JSX } from "solid-js";
+import { Match, Switch, createSignal, For, JSX, Show } from "solid-js";
 import style from "./style.module.less";
 import { uniqueId, unsafeCast } from "./utils";
 
@@ -17,41 +17,65 @@ function DataList(props: {
   onChange: (v: string[]) => void;
 }) {
   const id = uniqueId("datalist-");
-  const [current, setCurrent] = createSignal<string>("");
-  const [_, setData] = createSignal<string[]>(props.value);
+  const [current, setCurrent] = createSignal("");
+  const [, setData] = createSignal(props.value);
+  const [showDropdown, setShowDropdown] = createSignal(false);
+  window.addEventListener("click", () => setShowDropdown(false));
   return (
     <span class={style.datalist}>
-      <input
-        id={props.id}
-        type="text"
-        list={id}
-        value={current()}
-        onChange={(ev) => setCurrent(ev.currentTarget.value.trim())}
-      />
-      <datalist id={id}>
-        <For each={props.value}>{(item) => <option value={item} />}</For>
-      </datalist>
+      <span>
+        <input
+          id={props.id}
+          type="text"
+          list={id}
+          value={current()}
+          onInput={(ev) => setCurrent(ev.currentTarget.value.trim())}
+          onFocus={() => setShowDropdown(true)}
+          onBlur={() => setShowDropdown(false)}
+        />
+        <Show when={showDropdown()}>
+          <div class={style.dropdown}>
+            <For
+              each={(() => {
+                const curr = current().toLowerCase();
+                return props.value.filter((s) =>
+                  s.toLowerCase().startsWith(curr)
+                );
+              })()}
+            >
+              {(item) => (
+                <div
+                  class={style.dropdownEntry}
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  onClick={() => setCurrent(item)}
+                >
+                  {item}
+                </div>
+              )}
+            </For>
+          </div>
+        </Show>
+      </span>
       <button
         type="button"
-        onClick={() =>
-          props.onChange(setData((data) => data.filter((v) => v !== current())))
-        }
+        onClick={() => {
+          const curr = current();
+          props.onChange(setData((data) => data.filter((v) => v !== curr)));
+        }}
       >
         ➖
       </button>
       <button
         type="button"
-        onClick={() =>
-          current() === ""
-            ? undefined
-            : props.onChange(
-                setData((data) =>
-                  data.includes(current())
-                    ? Array.from(data)
-                    : data.concat(current())
-                )
-              )
-        }
+        onClick={() => {
+          const curr = current();
+          if (curr === "") return;
+          return props.onChange(
+            setData((data) =>
+              data.includes(curr) ? Array.from(data) : data.concat(curr)
+            )
+          );
+        }}
       >
         ➕
       </button>

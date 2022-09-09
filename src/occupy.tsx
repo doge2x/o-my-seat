@@ -38,7 +38,7 @@ function LocalEntry<
   K2 extends KeyOfType<InputTypeMap, Settings[K1]>
 >(props: { name: K1; label: string; type: K2 }) {
   return (
-    <Entry<K2>
+    <Entry
       value={unsafeCast(settings[props.name])}
       onChange={(val: InputTypeMap[K2]) =>
         setSetting(props.name, unsafeCast(val))
@@ -68,7 +68,7 @@ function Setting(props: { onSubmit: (args: Args) => void }) {
     K2 extends KeyOfType<InputTypeMap, Args[K1]>
   >(props: { name: K1; label: string; type: K2 }) {
     return (
-      <Entry<K2>
+      <Entry
         value={unsafeCast(args[props.name])}
         onChange={(val: InputTypeMap[K2]) =>
           setArgs(props.name, unsafeCast(val))
@@ -130,7 +130,10 @@ enum OccupyStage {
  * @param roomId 房间 ID
  */
 export function prepareOccupation(roomId: string) {
-  const win = openWin({ title: "O My Seat", width: 300, height: 500 });
+  const win = openWin("O My Seat", {
+    width: "300",
+    height: "500",
+  });
   injectStyle(win.document);
   render(() => {
     const [stage, setStage] = createSignal<OccupyStage>(OccupyStage.Prepare);
