@@ -6,11 +6,9 @@ Oh, occupy that seat for me, plz.
 
 **必备条件：**
 
-- 脚本管理器，推荐[Violentmonkey](https://violentmonkey.github.io/)
+- 脚本管理器，推荐 [Violentmonkey](https://violentmonkey.github.io/)
 
-点
-击[此链接](https://raw.githubusercontent.com/doge2x/o-my-seat/main/dist/o-my-seat.min.user.js)进
-行安装。
+点击[此链接](https://raw.githubusercontent.com/doge2x/o-my-seat/main/dist/o-my-seat.min.user.js)进行安装。
 
 ## 使用
 
