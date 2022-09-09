@@ -1850,7 +1850,7 @@ ${html}. Is your HTML properly formed?`;
       eagerly: false,
       rsvAm: true,
       rsvPm: true,
-      _postReq: false
+      postReq: true
     });
     function ArgsEntry(props2) {
       return createComponent(Entry, mergeProps({
@@ -1947,19 +1947,14 @@ ${html}. Is your HTML properly formed?`;
         type: "checkbox"
       }), _el$2);
       insert(_el$, createComponent(ArgsEntry, {
+        name: "postReq",
+        label: "\u53D1\u8D77\u9884\u7EA6\u8BF7\u6C42",
+        type: "checkbox"
+      }), _el$2);
+      insert(_el$, createComponent(ArgsEntry, {
         name: "eagerly",
         label: "\u7ACB\u5373\u6267\u884C",
         type: "checkbox"
-      }), _el$2);
-      insert(_el$, createComponent(Show, {
-        when: true,
-        get children() {
-          return createComponent(ArgsEntry, {
-            name: "_postReq",
-            label: "[DEV]\u53D1\u8D77\u9884\u7EA6\u8BF7\u6C42",
-            type: "checkbox"
-          });
-        }
       }), _el$2);
       _el$3.textContent = "\u6267\u884C";
       createRenderEffect((_p$) => {
@@ -2096,7 +2091,7 @@ ${html}. Is your HTML properly formed?`;
     rsvDate,
     rsvAm,
     rsvPm,
-    _postReq
+    postReq
   }, setTimer) {
     async function fetchAndReorder() {
       let rsvSta2 = await fetchRsvSta([settings.openStart, settings.openEnd], rsvDate, roomId);
@@ -2127,7 +2122,7 @@ ${html}. Is your HTML properly formed?`;
         const spare = checker.check(data);
         if (spare != null) {
           logger.ok(`\u627E\u5230\u7A7A\u5EA7\uFF1A${data.devName}\uFF0C${date2hhmm(spare[0])}-${date2hhmm(spare[1])}`);
-          if (_postReq) {
+          if (postReq) {
             return await fetchSetRsv(data.devId, rsvDate, start, end);
           }
           return true;
